@@ -1,63 +1,1207 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta id="Viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-        <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
-        <title>Vetor Experience</title>
-    </head>
-    <body class="mdl-demo mdl-color--grey-100 mdl-color-text--grey-700 mdl-base">
-        <div id="container">
-        <form>
-            <h1>
-                Welcome
-            </h1>
-            <div class="mdl-textfield mdl-js-textfield">
-                 <label class="mdl-textfield__label" for="nome">Nome</label>
-                 <input class="mdl-textfield__input" type="text" id="nome">    
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotador de Insumos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .slide-in { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b-4 border-blue-500">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-blue-500 p-2 rounded-lg">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-800">Cotador de Insumos</h1>
+                </div>
+                <nav class="hidden md:flex space-x-6">
+                    <button onclick="showSection('dashboard')" class="nav-btn text-blue-600 font-medium hover:text-blue-800 transition-colors">Dashboard</button>
+                    <button onclick="showSection('fornecedores')" class="nav-btn text-gray-600 hover:text-blue-600 transition-colors">Fornecedores</button>
+                    <button onclick="showSection('insumos')" class="nav-btn text-gray-600 hover:text-blue-600 transition-colors">Insumos</button>
+                    <button onclick="showSection('cotacoes')" class="nav-btn text-gray-600 hover:text-blue-600 transition-colors">Cotações</button>
+                </nav>
+                <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg bg-gray-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
             </div>
-            <div class="mdl-textfield mdl-js-textfield">
-                <label class="mdl-textfield__label" for="telefone">Telefone</label>
-                <input class="mdl-textfield__input" type="text" id="telefone">
+            <!-- Mobile Menu -->
+            <div id="mobileMenu" class="hidden md:hidden mt-4 space-y-2">
+                <button onclick="showSection('dashboard')" class="block w-full text-left px-4 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg">Dashboard</button>
+                <button onclick="showSection('fornecedores')" class="block w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 rounded-lg">Fornecedores</button>
+                <button onclick="showSection('insumos')" class="block w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 rounded-lg">Insumos</button>
+                <button onclick="showSection('cotacoes')" class="block w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 rounded-lg">Cotações</button>
             </div>
-            <div class="mdl-textfield mdl-js-textfield">
-                <label class="mdl-textfield__label" for="email">Email </label>
-                <input class="mdl-textfield__input" type="text" id="email">
-            </div>
-            <div class="mdl-textfield mdl-js-textfield">
-                <label class="mdl-textfield__label" for="placa">Placa</label>
-                <input class="mdl-textfield__input" type="text" id="placa">
-            </div>
-            <div class="mdl-textfield mdl-js-textfield">
-                <label class="mdl-textfield__label"for="cpf">CPF</label>
-                <input class="mdl-textfield__input" type="text" id="cpf">
-            </div>
-            <div class="mdl-textfield mdl-js-textfield">
-                <label class="mdl-textfield__label"for="dataNascimento">Data nascimento </label>
-                <input class="mdl-textfield__input" type="text" id="dataNascimento">
-            </div>
-            <div class="mdl-textfield mdl-js-textfield">
-                <label class="mdl-textfield__label"for="cidade">Cidade</label>
-                <input class="mdl-textfield__input" type="text" id="cidade">
-            </div>
-            <div class="mdl-textfield mdl-js-textfield">
-                <label class="mdl-textfield__label"for="estado">Estado</label>
-                <input class="mdl-textfield__input" type="text" id="estado">
-            </div>
-            <div class="mdl-textfield mdl-js-textfield">
-                <label class="mdl-textfield__label"for="LinkZap">Link Zap</label>
-                <input class="mdl-textfield__input" type="text" id="LinkZap">
-            </div>
-            <div class="mdl-textfield mdl-js-textfield">
-                <label class="mdl-textfield__label"for="LinkQrCode">Link Qr Code</label>
-                <input class="mdl-textfield__input" type="text" id="LinkQrCode">
-            </div>    
-            <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent" type="submit">Enviar</button>
+        </div>
+    </header>
 
-        </form>
-        <script src="./script.js"></script>
-        <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <div class="container mx-auto px-4 py-8">
+        <!-- Dashboard -->
+        <div id="dashboard" class="section fade-in">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-blue-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">Total Fornecedores</p>
+                            <p id="totalFornecedores" class="text-3xl font-bold text-gray-800">0</p>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-full">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">Total Insumos</p>
+                            <p id="totalInsumos" class="text-3xl font-bold text-gray-800">0</p>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-full">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-purple-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">Total Cotações</p>
+                            <p id="totalCotacoes" class="text-3xl font-bold text-gray-800">0</p>
+                        </div>
+                        <div class="bg-purple-100 p-3 rounded-full">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-orange-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">Economia Média</p>
+                            <p id="economiaMedia" class="text-3xl font-bold text-gray-800">R$ 0</p>
+                        </div>
+                        <div class="bg-orange-100 p-3 rounded-full">
+                            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Ações Rápidas</h3>
+                    <div class="space-y-3">
+                        <button onclick="showSection('fornecedores')" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            <span>Cadastrar Fornecedor</span>
+                        </button>
+                        <button onclick="showSection('insumos')" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            <span>Cadastrar Insumo</span>
+                        </button>
+                        <button onclick="showSection('cotacoes')" class="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            <span>Nova Cotação</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Últimas Cotações</h3>
+                    <div id="ultimasCotacoes" class="space-y-3">
+                        <p class="text-gray-500 text-center py-8">Nenhuma cotação realizada ainda</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fornecedores -->
+        <div id="fornecedores" class="section hidden">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Gestão de Fornecedores</h2>
+                    <button onclick="showFornecedorForm()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        <span>Novo Fornecedor</span>
+                    </button>
+                </div>
+
+                <!-- Formulário de Fornecedor -->
+                <div id="fornecedorForm" class="hidden mb-8 p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Cadastrar Novo Fornecedor</h3>
+                    <form onsubmit="saveFornecedor(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Código</label>
+                            <input type="text" id="fornecedorCodigo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
+                            <input type="text" id="fornecedorNome" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Endereço</label>
+                            <input type="text" id="fornecedorEndereco" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Contato</label>
+                            <input type="text" id="fornecedorContato" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                            <input type="email" id="fornecedorEmail" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
+                            <input type="tel" id="fornecedorTelefone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                        </div>
+                        <div class="md:col-span-2 flex space-x-4">
+                            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">Salvar</button>
+                            <button type="button" onclick="hideFornecedorForm()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Lista de Fornecedores -->
+                <div id="fornecedoresList" class="overflow-x-auto">
+                    <table class="w-full table-auto">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Código</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Nome</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Contato</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Email</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Telefone</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fornecedoresTableBody">
+                            <tr>
+                                <td colspan="6" class="px-4 py-8 text-center text-gray-500">Nenhum fornecedor cadastrado</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insumos -->
+        <div id="insumos" class="section hidden">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Gestão de Insumos</h2>
+                    <button onclick="showInsumoForm()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        <span>Novo Insumo</span>
+                    </button>
+                </div>
+
+                <!-- Formulário de Insumo -->
+                <div id="insumoForm" class="hidden mb-8 p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Cadastrar Novo Insumo</h3>
+                    <form onsubmit="saveInsumo(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
+                            <input type="text" id="insumoNome" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
+                            <input type="text" id="insumoCategoria" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Unidade de Medida</label>
+                            <select id="insumoUnidade" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
+                                <option value="">Selecione...</option>
+                                <option value="kg">Quilograma (kg)</option>
+                                <option value="g">Grama (g)</option>
+                                <option value="l">Litro (l)</option>
+                                <option value="ml">Mililitro (ml)</option>
+                                <option value="un">Unidade (un)</option>
+                                <option value="m">Metro (m)</option>
+                                <option value="m²">Metro quadrado (m²)</option>
+                                <option value="m³">Metro cúbico (m³)</option>
+                                <option value="cx">Caixa (cx)</option>
+                                <option value="pc">Peça (pc)</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-3 flex space-x-4">
+                            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">Salvar</button>
+                            <button type="button" onclick="hideInsumoForm()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Lista de Insumos -->
+                <div id="insumosList" class="overflow-x-auto">
+                    <table class="w-full table-auto">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Nome</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Categoria</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Unidade</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="insumosTableBody">
+                            <tr>
+                                <td colspan="4" class="px-4 py-8 text-center text-gray-500">Nenhum insumo cadastrado</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cotações -->
+        <div id="cotacoes" class="section hidden">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Gestão de Cotações</h2>
+                    <button onclick="showCotacaoForm()" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        <span>Nova Cotação</span>
+                    </button>
+                </div>
+
+                <!-- Formulário de Nova Cotação -->
+                <div id="cotacaoForm" class="hidden mb-8 p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Criar Nova Cotação</h3>
+                    <form onsubmit="createCotacao(event)" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Número/Identificação</label>
+                                <input type="text" id="cotacaoNumero" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Data</label>
+                                <input type="date" id="cotacaoData" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" required>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Selecionar Fornecedores para esta Cotação</label>
+                            <div id="fornecedoresSelection" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-4 bg-white rounded-lg border border-gray-200 max-h-60 overflow-y-auto">
+                                <p class="text-gray-500 text-center col-span-full">Nenhum fornecedor cadastrado</p>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-2">Selecione pelo menos um fornecedor para participar da cotação</p>
+                        </div>
+                        
+                        <div class="flex space-x-4">
+                            <button type="submit" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">Criar Cotação</button>
+                            <button type="button" onclick="hideCotacaoForm()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Lista de Cotações -->
+                <div id="cotacoesList" class="overflow-x-auto">
+                    <table class="w-full table-auto">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Número</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Data</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Itens</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cotacoesTableBody">
+                            <tr>
+                                <td colspan="5" class="px-4 py-8 text-center text-gray-500">Nenhuma cotação criada</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Editor de Cotação -->
+        <div id="cotacaoEditor" class="section hidden">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Editar Cotação</h2>
+                        <p id="cotacaoEditorInfo" class="text-gray-600"></p>
+                    </div>
+                    <div class="flex space-x-3 mt-4 md:mt-0">
+                        <button onclick="addItemToCotacao()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            <span>Adicionar Item</span>
+                        </button>
+                        <button onclick="showCotacaoResults()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">Ver Resultados</button>
+                        <button onclick="fecharCotacao()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Fechar Cotação</span>
+                        </button>
+                        <button onclick="showSection('cotacoes')" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">Voltar</button>
+                    </div>
+                </div>
+
+                <!-- Adicionar Item -->
+                <div id="addItemForm" class="hidden mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h4 class="font-semibold text-gray-800 mb-3">Adicionar Item à Cotação</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Insumo</label>
+                            <select id="itemInsumo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                                <option value="">Selecione um insumo...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Quantidade</label>
+                            <input type="number" id="itemQuantidade" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                        </div>
+                        <div class="flex items-end space-x-2">
+                            <button onclick="saveItemToCotacao()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">Adicionar</button>
+                            <button onclick="cancelAddItem()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Itens da Cotação por Fornecedor -->
+                <div id="cotacaoItens" class="space-y-6">
+                    <p class="text-gray-500 text-center py-8">Adicione itens à cotação para começar</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultados da Cotação -->
+        <div id="cotacaoResults" class="section hidden">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Resultados da Cotação</h2>
+                        <p id="cotacaoResultsInfo" class="text-gray-600"></p>
+                    </div>
+                    <div class="flex space-x-3 mt-4 md:mt-0">
+                        <button onclick="exportToPDF()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span>PDF</span>
+                        </button>
+                        <button onclick="exportToExcel()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span>Excel</span>
+                        </button>
+                        <button onclick="backToCotacaoEditor()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">Voltar</button>
+                    </div>
+                </div>
+
+                <!-- Resumo por Fornecedor -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Resumo por Fornecedor</h3>
+                    <div id="resumoFornecedores" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    </div>
+                </div>
+
+                <!-- Tabela Comparativa -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Comparativo Detalhado</h3>
+                    <div class="overflow-x-auto">
+                        <table id="tabelaComparativa" class="w-full table-auto border-collapse border border-gray-300">
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Rodapé com Responsáveis -->
+                <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Informações da Cotação</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-medium text-gray-700 mb-3">Responsáveis por Fornecedor:</h4>
+                            <div id="responsaveisFornecedores" class="space-y-2">
+                            </div>
+                        </div>
+                        <div id="responsavelFechamento" class="hidden">
+                            <h4 class="font-medium text-gray-700 mb-3">Fechamento da Cotação:</h4>
+                            <div class="bg-white p-4 rounded-lg border">
+                                <p class="text-sm text-gray-600">Fechada e aprovada por:</p>
+                                <p id="nomeResponsavelFechamento" class="font-semibold text-gray-800"></p>
+                                <p id="dataFechamento" class="text-sm text-gray-500"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    </body>
+
+    <script>
+        // Dados globais
+        let fornecedores = JSON.parse(localStorage.getItem('fornecedores') || '[]');
+        let insumos = JSON.parse(localStorage.getItem('insumos') || '[]');
+        let cotacoes = JSON.parse(localStorage.getItem('cotacoes') || '[]');
+        let currentCotacao = null;
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            // Definir data atual
+            document.getElementById('cotacaoData').value = new Date().toISOString().split('T')[0];
+            
+            // Carregar dados
+            loadFornecedores();
+            loadInsumos();
+            loadCotacoes();
+            updateDashboard();
+            
+            // Mostrar dashboard por padrão
+            showSection('dashboard');
+        });
+
+        // Navegação
+        function showSection(sectionName) {
+            // Esconder todas as seções
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // Mostrar seção selecionada
+            document.getElementById(sectionName).classList.remove('hidden');
+            
+            // Atualizar navegação
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-blue-600', 'font-medium');
+                btn.classList.add('text-gray-600');
+            });
+            
+            // Destacar botão ativo
+            event.target.classList.remove('text-gray-600');
+            event.target.classList.add('text-blue-600', 'font-medium');
+            
+            // Fechar menu mobile
+            document.getElementById('mobileMenu').classList.add('hidden');
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobileMenu').classList.toggle('hidden');
+        }
+
+        // Dashboard
+        function updateDashboard() {
+            document.getElementById('totalFornecedores').textContent = fornecedores.length;
+            document.getElementById('totalInsumos').textContent = insumos.length;
+            document.getElementById('totalCotacoes').textContent = cotacoes.length;
+            
+            // Calcular economia média (simulado)
+            const economia = cotacoes.length > 0 ? (Math.random() * 1000 + 500).toFixed(2) : '0';
+            document.getElementById('economiaMedia').textContent = `R$ ${economia}`;
+            
+            // Mostrar últimas cotações
+            const ultimasCotacoesDiv = document.getElementById('ultimasCotacoes');
+            if (cotacoes.length === 0) {
+                ultimasCotacoesDiv.innerHTML = '<p class="text-gray-500 text-center py-8">Nenhuma cotação realizada ainda</p>';
+            } else {
+                const ultimasCotacoes = cotacoes.slice(-3).reverse();
+                ultimasCotacoesDiv.innerHTML = ultimasCotacoes.map(cotacao => `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                            <p class="font-medium text-gray-800">${cotacao.numero}</p>
+                            <p class="text-sm text-gray-600">${new Date(cotacao.data).toLocaleDateString('pt-BR')}</p>
+                        </div>
+                        <button onclick="editCotacao('${cotacao.id}')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Editar</button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Fornecedores
+        function showFornecedorForm() {
+            document.getElementById('fornecedorForm').classList.remove('hidden');
+            document.getElementById('fornecedorCodigo').focus();
+        }
+
+        function hideFornecedorForm() {
+            document.getElementById('fornecedorForm').classList.add('hidden');
+            document.getElementById('fornecedorForm').querySelector('form').reset();
+        }
+
+        function saveFornecedor(event) {
+            event.preventDefault();
+            
+            const fornecedor = {
+                id: Date.now().toString(),
+                codigo: document.getElementById('fornecedorCodigo').value,
+                nome: document.getElementById('fornecedorNome').value,
+                endereco: document.getElementById('fornecedorEndereco').value,
+                contato: document.getElementById('fornecedorContato').value,
+                email: document.getElementById('fornecedorEmail').value,
+                telefone: document.getElementById('fornecedorTelefone').value
+            };
+            
+            fornecedores.push(fornecedor);
+            localStorage.setItem('fornecedores', JSON.stringify(fornecedores));
+            
+            loadFornecedores();
+            hideFornecedorForm();
+            updateDashboard();
+            
+            alert('Fornecedor cadastrado com sucesso!');
+        }
+
+        function loadFornecedores() {
+            const tbody = document.getElementById('fornecedoresTableBody');
+            
+            if (fornecedores.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Nenhum fornecedor cadastrado</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = fornecedores.map(fornecedor => `
+                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="px-4 py-3 text-sm text-gray-800">${fornecedor.codigo}</td>
+                    <td class="px-4 py-3 text-sm text-gray-800">${fornecedor.nome}</td>
+                    <td class="px-4 py-3 text-sm text-gray-800">${fornecedor.contato}</td>
+                    <td class="px-4 py-3 text-sm text-gray-800">${fornecedor.email}</td>
+                    <td class="px-4 py-3 text-sm text-gray-800">${fornecedor.telefone}</td>
+                    <td class="px-4 py-3 text-sm">
+                        <button onclick="deleteFornecedor('${fornecedor.id}')" class="text-red-600 hover:text-red-800 font-medium">Excluir</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function deleteFornecedor(id) {
+            if (confirm('Tem certeza que deseja excluir este fornecedor?')) {
+                fornecedores = fornecedores.filter(f => f.id !== id);
+                localStorage.setItem('fornecedores', JSON.stringify(fornecedores));
+                loadFornecedores();
+                updateDashboard();
+            }
+        }
+
+        // Insumos
+        function showInsumoForm() {
+            document.getElementById('insumoForm').classList.remove('hidden');
+            document.getElementById('insumoNome').focus();
+        }
+
+        function hideInsumoForm() {
+            document.getElementById('insumoForm').classList.add('hidden');
+            document.getElementById('insumoForm').querySelector('form').reset();
+        }
+
+        function saveInsumo(event) {
+            event.preventDefault();
+            
+            const insumo = {
+                id: Date.now().toString(),
+                nome: document.getElementById('insumoNome').value,
+                categoria: document.getElementById('insumoCategoria').value,
+                unidade: document.getElementById('insumoUnidade').value
+            };
+            
+            insumos.push(insumo);
+            localStorage.setItem('insumos', JSON.stringify(insumos));
+            
+            loadInsumos();
+            hideInsumoForm();
+            updateDashboard();
+            
+            alert('Insumo cadastrado com sucesso!');
+        }
+
+        function loadInsumos() {
+            const tbody = document.getElementById('insumosTableBody');
+            
+            if (insumos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Nenhum insumo cadastrado</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = insumos.map(insumo => `
+                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="px-4 py-3 text-sm text-gray-800">${insumo.nome}</td>
+                    <td class="px-4 py-3 text-sm text-gray-800">${insumo.categoria}</td>
+                    <td class="px-4 py-3 text-sm text-gray-800">${insumo.unidade}</td>
+                    <td class="px-4 py-3 text-sm">
+                        <button onclick="deleteInsumo('${insumo.id}')" class="text-red-600 hover:text-red-800 font-medium">Excluir</button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            // Atualizar select de insumos no editor de cotação
+            updateInsumoSelect();
+        }
+
+        function deleteInsumo(id) {
+            if (confirm('Tem certeza que deseja excluir este insumo?')) {
+                insumos = insumos.filter(i => i.id !== id);
+                localStorage.setItem('insumos', JSON.stringify(insumos));
+                loadInsumos();
+                updateDashboard();
+            }
+        }
+
+        function updateInsumoSelect() {
+            const select = document.getElementById('itemInsumo');
+            select.innerHTML = '<option value="">Selecione um insumo...</option>' +
+                insumos.map(insumo => `<option value="${insumo.id}">${insumo.nome} (${insumo.unidade})</option>`).join('');
+        }
+
+        // Cotações
+        function showCotacaoForm() {
+            if (fornecedores.length === 0) {
+                alert('Cadastre fornecedores antes de criar uma cotação.');
+                return;
+            }
+            
+            loadFornecedoresSelection();
+            document.getElementById('cotacaoForm').classList.remove('hidden');
+            document.getElementById('cotacaoNumero').focus();
+        }
+
+        function loadFornecedoresSelection() {
+            const container = document.getElementById('fornecedoresSelection');
+            
+            if (fornecedores.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center col-span-full">Nenhum fornecedor cadastrado</p>';
+                return;
+            }
+            
+            container.innerHTML = fornecedores.map(fornecedor => `
+                <label class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 cursor-pointer transition-colors">
+                    <input type="checkbox" value="${fornecedor.id}" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-800 truncate">${fornecedor.nome}</p>
+                        <p class="text-xs text-gray-600 truncate">${fornecedor.contato}</p>
+                    </div>
+                </label>
+            `).join('');
+        }
+
+        function hideCotacaoForm() {
+            document.getElementById('cotacaoForm').classList.add('hidden');
+            document.getElementById('cotacaoForm').querySelector('form').reset();
+        }
+
+        function createCotacao(event) {
+            event.preventDefault();
+            
+            // Verificar fornecedores selecionados
+            const fornecedoresSelecionados = [];
+            document.querySelectorAll('#fornecedoresSelection input[type="checkbox"]:checked').forEach(checkbox => {
+                fornecedoresSelecionados.push(checkbox.value);
+            });
+            
+            if (fornecedoresSelecionados.length === 0) {
+                alert('Selecione pelo menos um fornecedor para participar da cotação.');
+                return;
+            }
+            
+            const cotacao = {
+                id: Date.now().toString(),
+                numero: document.getElementById('cotacaoNumero').value,
+                data: document.getElementById('cotacaoData').value,
+                fornecedoresSelecionados: fornecedoresSelecionados,
+                itens: [],
+                precos: {}
+            };
+            
+            cotacoes.push(cotacao);
+            localStorage.setItem('cotacoes', JSON.stringify(cotacoes));
+            
+            loadCotacoes();
+            hideCotacaoForm();
+            updateDashboard();
+            
+            // Ir direto para o editor
+            editCotacao(cotacao.id);
+        }
+
+        function loadCotacoes() {
+            const tbody = document.getElementById('cotacoesTableBody');
+            
+            if (cotacoes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">Nenhuma cotação criada</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = cotacoes.map(cotacao => `
+                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="px-4 py-3 text-sm text-gray-800">${cotacao.numero}</td>
+                    <td class="px-4 py-3 text-sm text-gray-800">${new Date(cotacao.data).toLocaleDateString('pt-BR')}</td>
+                    <td class="px-4 py-3 text-sm text-gray-800">${cotacao.itens.length} itens</td>
+                    <td class="px-4 py-3 text-sm">
+                        <span class="px-2 py-1 text-xs font-medium rounded-full ${cotacao.fechada ? 'bg-red-100 text-red-800' : cotacao.itens.length > 0 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                            ${cotacao.fechada ? 'Fechada' : cotacao.itens.length > 0 ? 'Em andamento' : 'Criada'}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-sm space-x-2">
+                        ${cotacao.fechada ? 
+                            `<button onclick="viewCotacao('${cotacao.id}')" class="text-blue-600 hover:text-blue-800 font-medium">Visualizar</button>` : 
+                            `<button onclick="editCotacao('${cotacao.id}')" class="text-blue-600 hover:text-blue-800 font-medium">Editar</button>
+                             <button onclick="fecharCotacaoFromList('${cotacao.id}')" class="text-orange-600 hover:text-orange-800 font-medium">Fechar</button>`
+                        }
+                        ${!cotacao.fechada ? 
+                            `<button onclick="deleteCotacao('${cotacao.id}')" class="text-red-600 hover:text-red-800 font-medium">Excluir</button>` : 
+                            ''
+                        }
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function deleteCotacao(id) {
+            if (confirm('Tem certeza que deseja excluir esta cotação?')) {
+                cotacoes = cotacoes.filter(c => c.id !== id);
+                localStorage.setItem('cotacoes', JSON.stringify(cotacoes));
+                loadCotacoes();
+                updateDashboard();
+            }
+        }
+
+        function editCotacao(id) {
+            currentCotacao = cotacoes.find(c => c.id === id);
+            if (!currentCotacao) return;
+            
+            if (currentCotacao.fechada) {
+                alert('Esta cotação já foi fechada e não pode ser editada.');
+                return;
+            }
+            
+            document.getElementById('cotacaoEditorInfo').textContent = 
+                `${currentCotacao.numero} - ${new Date(currentCotacao.data).toLocaleDateString('pt-BR')}`;
+            
+            updateInsumoSelect();
+            loadCotacaoItens();
+            showSection('cotacaoEditor');
+        }
+
+        function viewCotacao(id) {
+            currentCotacao = cotacoes.find(c => c.id === id);
+            if (!currentCotacao) return;
+            
+            // Ir direto para os resultados da cotação fechada
+            document.getElementById('cotacaoResultsInfo').textContent = 
+                `${currentCotacao.numero} - ${new Date(currentCotacao.data).toLocaleDateString('pt-BR')} (FECHADA)`;
+            
+            generateResults();
+            showSection('cotacaoResults');
+        }
+
+        function fecharCotacao() {
+            if (currentCotacao.itens.length === 0) {
+                alert('Adicione itens à cotação antes de fechá-la.');
+                return;
+            }
+
+            const responsavel = prompt('Digite seu nome para confirmar o fechamento da cotação:');
+            if (!responsavel || responsavel.trim() === '') {
+                return;
+            }
+
+            if (confirm('Tem certeza que deseja fechar esta cotação? Após fechada, ela não poderá mais ser editada.')) {
+                currentCotacao.fechada = true;
+                currentCotacao.responsavelFechamento = responsavel.trim();
+                currentCotacao.dataFechamento = new Date().toISOString();
+
+                // Salvar no localStorage
+                const cotacaoIndex = cotacoes.findIndex(c => c.id === currentCotacao.id);
+                cotacoes[cotacaoIndex] = currentCotacao;
+                localStorage.setItem('cotacoes', JSON.stringify(cotacoes));
+
+                alert('Cotação fechada com sucesso!');
+                showSection('cotacoes');
+                loadCotacoes();
+            }
+        }
+
+        function fecharCotacaoFromList(cotacaoId) {
+            const cotacao = cotacoes.find(c => c.id === cotacaoId);
+            if (!cotacao) return;
+
+            if (cotacao.itens.length === 0) {
+                alert('Adicione itens à cotação antes de fechá-la.');
+                return;
+            }
+
+            const responsavel = prompt('Digite seu nome para confirmar o fechamento da cotação:');
+            if (!responsavel || responsavel.trim() === '') {
+                return;
+            }
+
+            if (confirm('Tem certeza que deseja fechar esta cotação? Após fechada, ela não poderá mais ser editada.')) {
+                cotacao.fechada = true;
+                cotacao.responsavelFechamento = responsavel.trim();
+                cotacao.dataFechamento = new Date().toISOString();
+
+                // Salvar no localStorage
+                const cotacaoIndex = cotacoes.findIndex(c => c.id === cotacaoId);
+                cotacoes[cotacaoIndex] = cotacao;
+                localStorage.setItem('cotacoes', JSON.stringify(cotacoes));
+
+                alert('Cotação fechada com sucesso!');
+                loadCotacoes();
+                updateDashboard();
+            }
+        }
+
+        function addItemToCotacao() {
+            if (insumos.length === 0) {
+                alert('Cadastre insumos antes de adicionar itens à cotação.');
+                return;
+            }
+            document.getElementById('addItemForm').classList.remove('hidden');
+        }
+
+        function cancelAddItem() {
+            document.getElementById('addItemForm').classList.add('hidden');
+            document.getElementById('addItemForm').querySelector('form').reset();
+        }
+
+        function saveItemToCotacao() {
+            const insumoId = document.getElementById('itemInsumo').value;
+            const quantidade = parseFloat(document.getElementById('itemQuantidade').value);
+            
+            if (!insumoId || !quantidade) {
+                alert('Preencha todos os campos.');
+                return;
+            }
+            
+            const insumo = insumos.find(i => i.id === insumoId);
+            if (!insumo) return;
+            
+            // Verificar se item já existe
+            const existingItem = currentCotacao.itens.find(item => item.insumoId === insumoId);
+            if (existingItem) {
+                alert('Este insumo já foi adicionado à cotação.');
+                return;
+            }
+            
+            const item = {
+                id: Date.now().toString(),
+                insumoId: insumoId,
+                insumo: insumo,
+                quantidade: quantidade
+            };
+            
+            currentCotacao.itens.push(item);
+            
+            // Salvar no localStorage
+            const cotacaoIndex = cotacoes.findIndex(c => c.id === currentCotacao.id);
+            cotacoes[cotacaoIndex] = currentCotacao;
+            localStorage.setItem('cotacoes', JSON.stringify(cotacoes));
+            
+            loadCotacaoItens();
+            cancelAddItem();
+        }
+
+        function loadCotacaoItens() {
+            const container = document.getElementById('cotacaoItens');
+            
+            if (currentCotacao.itens.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">Adicione itens à cotação para começar</p>';
+                return;
+            }
+            
+            // Usar fornecedores selecionados para esta cotação
+            const fornecedoresAtivos = currentCotacao.fornecedoresSelecionados ? 
+                fornecedores.filter(f => currentCotacao.fornecedoresSelecionados.includes(f.id)) :
+                fornecedores.slice(0, 5); // Fallback para cotações antigas
+            
+            container.innerHTML = fornecedoresAtivos.map(fornecedor => `
+                <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+                        ${fornecedor.nome}
+                    </h4>
+                    <div class="space-y-3">
+                        ${currentCotacao.itens.map(item => `
+                            <div class="flex items-center justify-between bg-white p-3 rounded-lg border">
+                                <div class="flex-1">
+                                    <p class="font-medium text-gray-800">${item.insumo.nome}</p>
+                                    <p class="text-sm text-gray-600">${item.quantidade} ${item.insumo.unidade}</p>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-sm text-gray-600">R$</span>
+                                        <input 
+                                            type="number" 
+                                            step="0.01" 
+                                            placeholder="0,00"
+                                            value="${getPreco(item.id, fornecedor.id)}"
+                                            onchange="updatePreco('${item.id}', '${fornecedor.id}', this.value)"
+                                            class="w-24 px-2 py-1 border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        >
+                                    </div>
+                                    <div class="text-sm text-gray-600 min-w-[80px] text-right">
+                                        Total: R$ <span id="total-${item.id}-${fornecedor.id}">${calculateItemTotal(item.id, fornecedor.id)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                        <div class="border-t pt-3 mt-3">
+                            <div class="flex justify-between items-center font-semibold text-gray-800">
+                                <span>Total do Fornecedor:</span>
+                                <span>R$ <span id="fornecedor-total-${fornecedor.id}">${calculateFornecedorTotal(fornecedor.id)}</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getPreco(itemId, fornecedorId) {
+            const key = `${itemId}-${fornecedorId}`;
+            return currentCotacao.precos[key] || '';
+        }
+
+        function updatePreco(itemId, fornecedorId, preco) {
+            const key = `${itemId}-${fornecedorId}`;
+            currentCotacao.precos[key] = parseFloat(preco) || 0;
+            
+            // Salvar no localStorage
+            const cotacaoIndex = cotacoes.findIndex(c => c.id === currentCotacao.id);
+            cotacoes[cotacaoIndex] = currentCotacao;
+            localStorage.setItem('cotacoes', JSON.stringify(cotacoes));
+            
+            // Atualizar totais
+            document.getElementById(`total-${itemId}-${fornecedorId}`).textContent = calculateItemTotal(itemId, fornecedorId);
+            document.getElementById(`fornecedor-total-${fornecedorId}`).textContent = calculateFornecedorTotal(fornecedorId);
+        }
+
+        function calculateItemTotal(itemId, fornecedorId) {
+            const item = currentCotacao.itens.find(i => i.id === itemId);
+            const preco = getPreco(itemId, fornecedorId);
+            if (!item || !preco) return '0,00';
+            
+            const total = item.quantidade * parseFloat(preco);
+            return total.toFixed(2).replace('.', ',');
+        }
+
+        function calculateFornecedorTotal(fornecedorId) {
+            let total = 0;
+            currentCotacao.itens.forEach(item => {
+                const preco = getPreco(item.id, fornecedorId);
+                if (preco) {
+                    total += item.quantidade * parseFloat(preco);
+                }
+            });
+            return total.toFixed(2).replace('.', ',');
+        }
+
+        function showCotacaoResults() {
+            if (currentCotacao.itens.length === 0) {
+                alert('Adicione itens à cotação antes de ver os resultados.');
+                return;
+            }
+            
+            document.getElementById('cotacaoResultsInfo').textContent = 
+                `${currentCotacao.numero} - ${new Date(currentCotacao.data).toLocaleDateString('pt-BR')}`;
+            
+            generateResults();
+            showSection('cotacaoResults');
+        }
+
+        function generateResults() {
+            const fornecedoresAtivos = currentCotacao.fornecedoresSelecionados ? 
+                fornecedores.filter(f => currentCotacao.fornecedoresSelecionados.includes(f.id)) :
+                fornecedores.slice(0, 5); // Fallback para cotações antigas
+            
+            // Resumo por fornecedor
+            const resumoContainer = document.getElementById('resumoFornecedores');
+            const totaisFornecedores = fornecedoresAtivos.map(fornecedor => {
+                const total = parseFloat(calculateFornecedorTotal(fornecedor.id).replace(',', '.'));
+                return { fornecedor, total };
+            }).sort((a, b) => a.total - b.total);
+            
+            resumoContainer.innerHTML = totaisFornecedores.map((item, index) => `
+                <div class="bg-white p-4 rounded-lg border-2 ${index === 0 ? 'border-green-500 bg-green-50' : 'border-gray-200'}">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-semibold text-gray-800">${item.fornecedor.nome}</h4>
+                        ${index === 0 ? '<span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full">MELHOR</span>' : ''}
+                    </div>
+                    <p class="text-2xl font-bold ${index === 0 ? 'text-green-600' : 'text-gray-800'}">
+                        R$ ${item.total.toFixed(2).replace('.', ',')}
+                    </p>
+                    <p class="text-sm text-gray-600">${item.fornecedor.contato}</p>
+                </div>
+            `).join('');
+            
+            // Tabela comparativa
+            const tabela = document.getElementById('tabelaComparativa');
+            const basicHeaders = ['Item', 'Qtd', 'Unidade'];
+            const fornecedorHeaders = fornecedoresAtivos.map(f => 
+                `<th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 min-w-[150px]">
+                    <div class="space-y-1">
+                        <div class="font-semibold">${f.nome}</div>
+                        <div class="font-normal text-xs text-gray-600">${f.contato}</div>
+                        <div class="font-normal text-xs text-gray-600">${f.telefone}</div>
+                    </div>
+                </th>`
+            );
+            
+            tabela.innerHTML = `
+                <thead>
+                    <tr class="bg-gray-100">
+                        ${basicHeaders.map(header => `<th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700">${header}</th>`).join('')}
+                        ${fornecedorHeaders.join('')}
+                        <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700">Melhor Preço</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${currentCotacao.itens.map(item => {
+                        const precos = fornecedoresAtivos.map(f => parseFloat(getPreco(item.id, f.id)) || 0);
+                        const menorPreco = Math.min(...precos.filter(p => p > 0));
+                        const melhorFornecedor = fornecedoresAtivos[precos.indexOf(menorPreco)];
+                        
+                        return `
+                            <tr class="hover:bg-gray-50">
+                                <td class="border border-gray-300 px-3 py-2 text-sm">${item.insumo.nome}</td>
+                                <td class="border border-gray-300 px-3 py-2 text-sm text-center">${item.quantidade}</td>
+                                <td class="border border-gray-300 px-3 py-2 text-sm text-center">${item.insumo.unidade}</td>
+                                ${fornecedoresAtivos.map((f, index) => {
+                                    const preco = precos[index];
+                                    const isMinimo = preco === menorPreco && preco > 0;
+                                    return `<td class="border border-gray-300 px-3 py-2 text-sm text-center ${isMinimo ? 'bg-green-100 font-semibold' : ''}">
+                                        ${preco > 0 ? `R$ ${preco.toFixed(2).replace('.', ',')}` : '-'}
+                                    </td>`;
+                                }).join('')}
+                                <td class="border border-gray-300 px-3 py-2 text-sm text-center font-semibold text-green-600">
+                                    ${melhorFornecedor ? melhorFornecedor.nome : '-'}
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            `;
+
+            // Responsáveis por fornecedor
+            const responsaveisContainer = document.getElementById('responsaveisFornecedores');
+            responsaveisContainer.innerHTML = fornecedoresAtivos.map(fornecedor => `
+                <div class="flex items-center justify-between bg-white p-3 rounded-lg border">
+                    <span class="font-medium text-gray-800">${fornecedor.nome}:</span>
+                    <span class="text-gray-600">${fornecedor.contato}</span>
+                </div>
+            `).join('');
+
+            // Informações de fechamento
+            const responsavelFechamentoDiv = document.getElementById('responsavelFechamento');
+            if (currentCotacao.fechada) {
+                responsavelFechamentoDiv.classList.remove('hidden');
+                document.getElementById('nomeResponsavelFechamento').textContent = currentCotacao.responsavelFechamento;
+                document.getElementById('dataFechamento').textContent = 
+                    `Em ${new Date(currentCotacao.dataFechamento).toLocaleDateString('pt-BR')} às ${new Date(currentCotacao.dataFechamento).toLocaleTimeString('pt-BR')}`;
+            } else {
+                responsavelFechamentoDiv.classList.add('hidden');
+            }
+        }
+
+        function backToCotacaoEditor() {
+            // Se a cotação está fechada, voltar para a lista de cotações
+            if (currentCotacao && currentCotacao.fechada) {
+                showSection('cotacoes');
+            } else {
+                showSection('cotacaoEditor');
+            }
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const fornecedoresAtivos = currentCotacao.fornecedoresSelecionados ? 
+                fornecedores.filter(f => currentCotacao.fornecedoresSelecionados.includes(f.id)) :
+                fornecedores.slice(0, 5);
+            
+            // Título
+            doc.setFontSize(20);
+            doc.text('Relatório de Cotação', 20, 20);
+            
+            // Informações da cotação
+            doc.setFontSize(12);
+            doc.text(`Cotação: ${currentCotacao.numero}`, 20, 35);
+            doc.text(`Data: ${new Date(currentCotacao.data).toLocaleDateString('pt-BR')}`, 20, 45);
+            
+            // Resumo por fornecedor
+            doc.setFontSize(14);
+            doc.text('Resumo por Fornecedor:', 20, 65);
+            
+            let y = 75;
+            fornecedoresAtivos.forEach(fornecedor => {
+                const total = calculateFornecedorTotal(fornecedor.id);
+                doc.setFontSize(10);
+                doc.text(`${fornecedor.nome}: R$ ${total}`, 25, y);
+                y += 10;
+            });
+
+            // Salvar
+            doc.save(`cotacao-${currentCotacao.numero}.pdf`);
+        }
+
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            const fornecedoresAtivos = currentCotacao.fornecedoresSelecionados ? 
+                fornecedores.filter(f => currentCotacao.fornecedoresSelecionados.includes(f.id)) :
+                fornecedores.slice(0, 5);
+            
+            // Dados da planilha
+            const data = [
+                ['Cotação', currentCotacao.numero],
+                ['Data', new Date(currentCotacao.data).toLocaleDateString('pt-BR')],
+                [''],
+                ['Item', 'Quantidade', 'Unidade', ...fornecedoresAtivos.map(f => f.nome)]
+            ];
+            
+            currentCotacao.itens.forEach(item => {
+                const row = [
+                    item.insumo.nome,
+                    item.quantidade,
+                    item.insumo.unidade,
+                    ...fornecedoresAtivos.map(f => {
+                        const preco = getPreco(item.id, f.id);
+                        return preco ? parseFloat(preco) : '';
+                    })
+                ];
+                data.push(row);
+            });
+            
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, 'Cotação');
+            
+            XLSX.writeFile(wb, `cotacao-${currentCotacao.numero}.xlsx`);
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972c83d854606239',t:'MTc1NTgwNDMxMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
