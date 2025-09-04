@@ -38,6 +38,21 @@
             stroke-width: 2;
             pointer-events: none;
         }
+        .polygon-label {
+            position: absolute;
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            pointer-events: none;
+            z-index: 25;
+            text-align: center;
+            white-space: nowrap;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
         .upload-area {
             border: 2px dashed #d1d5db;
             transition: all 0.3s ease;
@@ -417,10 +432,12 @@
             }
             
             setMode(mode) {
-                // PROTEÇÃO ANTES DE MUDAR MODO
-                if (this.image) {
-                    this.protectImage();
-                }
+                // Salvar estado da imagem ANTES de qualquer mudança
+                const imageState = this.image ? {
+                    src: this.mainImage.src,
+                    transform: this.mainImage.style.transform,
+                    display: this.mainImage.style.display
+                } : null;
                 
                 this.mode = mode;
                 this.canvasContainer.className = `canvas-container ${mode === 'pan' ? 'pan-mode' : ''}`;
@@ -434,16 +451,25 @@
                     this.drawModeBtn.className = 'flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors';
                 } else if (mode === 'pan') {
                     this.panModeBtn.className = 'flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors';
-                } else if (mode === 'calibrate') {
-                    this.calibrateModeBtn.className = 'w-full bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors';
-                    this.calibrateModeBtn.textContent = '✅ Calibrando... (2 pontos)';
                 }
                 
-                // PROTEÇÃO APÓS MUDAR MODO
-                if (this.image) {
-                    setTimeout(() => {
-                        this.protectImage();
-                    }, 5);
+                // RESTAURAR imagem imediatamente se existir
+                if (imageState && this.mainImage) {
+                    this.mainImage.src = imageState.src;
+                    this.mainImage.style.cssText = `
+                        display: block !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                        position: absolute !important;
+                        z-index: 1 !important;
+                        pointer-events: none !important;
+                        max-width: none !important;
+                        max-height: none !important;
+                        width: auto !important;
+                        height: auto !important;
+                        transform: translate(${this.offsetX}px, ${this.offsetY}px) scale(${this.scale}) !important;
+                        transform-origin: 0 0 !important;
+                    `;
                 }
             }
             
@@ -784,11 +810,54 @@
                 
                 this.polygonSvg.appendChild(path);
                 
+                // Adicionar texto do polígono
+                this.addPolygonLabel(polygon);
+                
                 this.clearCurrentPolygonDisplay();
                 this.currentPolygon = [];
                 this.isDrawing = false;
                 this.finishBtn.disabled = true;
                 this.cancelBtn.disabled = true;
+            }
+            
+            addPolygonLabel(polygon) {
+                // Calcular centro do polígono
+                const center = this.calculatePolygonCenter(polygon.points);
+                const screenX = center.x * this.scale + this.offsetX;
+                const screenY = center.y * this.scale + this.offsetY;
+                
+                // Criar elemento de texto
+                const label = document.createElement('div');
+                label.className = 'polygon-label';
+                label.dataset.polygonId = polygon.id;
+                
+                const unit = this.isCalibrated ? 'm²' : 'px²';
+                label.innerHTML = `
+                    <div style="font-weight: bold; margin-bottom: 2px;">${polygon.name}</div>
+                    <div style="font-size: 11px;">${polygon.area.toFixed(2)} ${unit}</div>
+                `;
+                
+                // Posicionar o texto
+                label.style.left = screenX + 'px';
+                label.style.top = screenY + 'px';
+                label.style.transform = 'translate(-50%, -50%)';
+                
+                this.canvasContainer.appendChild(label);
+            }
+            
+            calculatePolygonCenter(points) {
+                let centerX = 0;
+                let centerY = 0;
+                
+                for (let point of points) {
+                    centerX += point.x;
+                    centerY += point.y;
+                }
+                
+                return {
+                    x: centerX / points.length,
+                    y: centerY / points.length
+                };
             }
             
             cancelPolygon() {
@@ -852,6 +921,22 @@
                             // Manter as cores originais
                             path.style.stroke = polygon.color;
                             path.style.fill = this.hexToRgba(polygon.color, 0.4);
+                        }
+                    }
+                });
+                
+                // Atualizar posições dos labels
+                this.canvasContainer.querySelectorAll('.polygon-label').forEach(label => {
+                    const polygonId = label.dataset.polygonId;
+                    if (polygonId) {
+                        const polygon = this.polygons.find(p => p.id == polygonId);
+                        if (polygon) {
+                            const center = this.calculatePolygonCenter(polygon.points);
+                            const screenX = center.x * this.scale + this.offsetX;
+                            const screenY = center.y * this.scale + this.offsetY;
+                            
+                            label.style.left = screenX + 'px';
+                            label.style.top = screenY + 'px';
                         }
                     }
                 });
@@ -920,6 +1005,10 @@
                 const path = this.polygonSvg.querySelector(`[data-polygon-id="${id}"]`);
                 if (path) path.remove();
                 
+                // Remove label do polígono
+                const label = this.canvasContainer.querySelector(`.polygon-label[data-polygon-id="${id}"]`);
+                if (label) label.remove();
+                
                 this.updatePolygonList();
                 this.updateExportButtons();
             }
@@ -976,8 +1065,14 @@
                     return;
                 }
                 
-                // PROTEÇÃO EXTRA ANTES DA CALIBRAÇÃO
-                this.protectImage();
+                // PROTEÇÃO MÁXIMA - Salvar estado da imagem
+                const imageState = {
+                    src: this.mainImage.src,
+                    display: 'block',
+                    visibility: 'visible',
+                    opacity: '1',
+                    transform: this.mainImage.style.transform
+                };
                 
                 // Cancelar polígono atual se estiver desenhando
                 if (this.isDrawing) {
@@ -988,16 +1083,61 @@
                 const oldCalibrationPoints = this.canvasContainer.querySelectorAll('[data-calibration-point="true"]');
                 oldCalibrationPoints.forEach(point => point.remove());
                 
-                // Configurar modo de calibração
+                // Configurar modo de calibração SEM usar setMode
                 this.isCalibrating = true;
                 this.calibrationPoints = [];
-                this.setMode('calibrate');
+                this.mode = 'calibrate';
                 
-                // PROTEÇÃO EXTRA APÓS CONFIGURAR CALIBRAÇÃO
-                setTimeout(() => {
-                    this.protectImage();
-                    this.updateImageTransform();
-                }, 10);
+                // Atualizar apenas os botões manualmente
+                this.drawModeBtn.className = 'flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors';
+                this.panModeBtn.className = 'flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors';
+                this.calibrateModeBtn.className = 'w-full bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors';
+                this.calibrateModeBtn.textContent = '✅ Calibrando... (2 pontos)';
+                
+                // RESTAURAR IMAGEM IMEDIATAMENTE
+                this.mainImage.src = imageState.src;
+                this.mainImage.style.cssText = `
+                    display: block !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                    position: absolute !important;
+                    z-index: 1 !important;
+                    pointer-events: none !important;
+                    max-width: none !important;
+                    max-height: none !important;
+                    width: auto !important;
+                    height: auto !important;
+                    transform: ${imageState.transform} !important;
+                    transform-origin: 0 0 !important;
+                `;
+                
+                // Proteção contínua durante calibração
+                const calibrationProtection = setInterval(() => {
+                    if (!this.isCalibrating) {
+                        clearInterval(calibrationProtection);
+                        return;
+                    }
+                    
+                    if (this.mainImage.style.display !== 'block' || 
+                        this.mainImage.style.visibility === 'hidden' || 
+                        this.mainImage.style.opacity === '0') {
+                        
+                        this.mainImage.style.cssText = `
+                            display: block !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
+                            position: absolute !important;
+                            z-index: 1 !important;
+                            pointer-events: none !important;
+                            max-width: none !important;
+                            max-height: none !important;
+                            width: auto !important;
+                            height: auto !important;
+                            transform: translate(${this.offsetX}px, ${this.offsetY}px) scale(${this.scale}) !important;
+                            transform-origin: 0 0 !important;
+                        `;
+                    }
+                }, 50);
                 
                 // Mostrar instrução inicial
                 this.showNotification('Clique no primeiro ponto da distância conhecida', 'info');
@@ -1086,19 +1226,46 @@
                 const calibrationPoints = this.canvasContainer.querySelectorAll('[data-calibration-point="true"]');
                 calibrationPoints.forEach(point => point.remove());
                 
-                this.setMode('draw');
+                // Finalizar calibração SEM usar setMode
                 this.isCalibrating = false;
+                this.mode = 'draw';
                 
-                // Reset button text
+                // Atualizar botões manualmente
+                this.drawModeBtn.className = 'flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors';
+                this.panModeBtn.className = 'flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors';
+                this.calibrateModeBtn.className = 'w-full bg-orange-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors';
                 this.calibrateModeBtn.textContent = '📏 Calibrar Escala';
+                
+                // GARANTIR que a imagem permanece visível
+                this.protectImage();
                 
                 // Recalcular áreas dos polígonos existentes
                 this.polygons.forEach(polygon => {
                     polygon.area = this.calculatePolygonArea(polygon.points);
                 });
+                
+                // Atualizar labels dos polígonos existentes
+                this.updatePolygonLabels();
                 this.updatePolygonList();
                 
                 this.showNotification(`Calibração concluída! 1 metro = ${this.pixelsPerMeter.toFixed(2)} pixels`, 'success');
+            }
+            
+            updatePolygonLabels() {
+                // Atualizar texto dos labels existentes
+                this.canvasContainer.querySelectorAll('.polygon-label').forEach(label => {
+                    const polygonId = label.dataset.polygonId;
+                    if (polygonId) {
+                        const polygon = this.polygons.find(p => p.id == polygonId);
+                        if (polygon) {
+                            const unit = this.isCalibrated ? 'm²' : 'px²';
+                            label.innerHTML = `
+                                <div style="font-weight: bold; margin-bottom: 2px;">${polygon.name}</div>
+                                <div style="font-size: 11px;">${polygon.area.toFixed(2)} ${unit}</div>
+                            `;
+                        }
+                    }
+                });
             }
             
             cancelCalibration() {
@@ -1150,5 +1317,5 @@
         // Inicializar aplicação
         const mapper = new PolygonMapper();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'979f0282d54f6eae',t:'MTc1NzAwNDg3Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'979f1f9a20d53b9a',t:'MTc1NzAwNjA2OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
