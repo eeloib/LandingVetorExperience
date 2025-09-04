@@ -3,1254 +3,988 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cotador de Insumos</title>
+    <title>Mapeador de Polígonos</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .fade-in { animation: fadeIn 0.3s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .slide-in { animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+        .canvas-container {
+            position: relative;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+        .canvas-container.pan-mode {
+            cursor: grab;
+        }
+        .canvas-container.pan-mode:active {
+            cursor: grabbing;
+        }
+        .point {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #3b82f6;
+            border: 2px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 30;
+        }
+        .point:hover {
+            background: #1d4ed8;
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+        .polygon-path {
+            fill: rgba(59, 130, 246, 0.2);
+            stroke: #3b82f6;
+            stroke-width: 2;
+            pointer-events: none;
+        }
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #3b82f6;
+            background-color: #f8fafc;
+        }
+        .upload-area.dragover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        #mainImage {
+            z-index: 1;
+        }
+        #polygonSvg {
+            z-index: 20;
+        }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
-    <!-- Header -->
-    <header class="bg-white shadow-lg border-b-4 border-blue-500">
-        <div class="container mx-auto px-4 py-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-blue-500 p-2 rounded-lg">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex h-screen">
+        <!-- Painel Lateral -->
+        <div class="w-80 bg-white shadow-lg p-6 overflow-y-auto">
+            <h1 class="text-2xl font-bold text-gray-800 mb-6">Mapeador de Polígonos</h1>
+            
+            <!-- Upload de Imagem -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Carregar Imagem</label>
+                <div id="uploadArea" class="upload-area rounded-lg p-6 text-center cursor-pointer">
+                    <input type="file" id="imageInput" accept="image/*" class="hidden">
+                    <div class="text-gray-500">
+                        <svg class="mx-auto h-12 w-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                         </svg>
+                        <p class="text-sm">Clique ou arraste uma imagem</p>
                     </div>
-                    <h1 class="text-2xl font-bold text-gray-800">Cotador de Insumos</h1>
                 </div>
-                <nav class="hidden md:flex space-x-6">
-                    <button onclick="showSection('dashboard')" class="nav-btn text-blue-600 font-medium hover:text-blue-800 transition-colors">Dashboard</button>
-                    <button onclick="showSection('fornecedores')" class="nav-btn text-gray-600 hover:text-blue-600 transition-colors">Fornecedores</button>
-                    <button onclick="showSection('insumos')" class="nav-btn text-gray-600 hover:text-blue-600 transition-colors">Insumos</button>
-                    <button onclick="showSection('cotacoes')" class="nav-btn text-gray-600 hover:text-blue-600 transition-colors">Cotações</button>
-                </nav>
-                <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg bg-gray-100">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
+            </div>
+
+            <!-- Calibração de Escala -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">Calibração de Escala</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Distância Conhecida (metros)</label>
+                        <input type="number" id="knownDistance" value="10" step="0.1" min="0.1" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <button id="calibrateMode" class="w-full bg-orange-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors">
+                        📏 Calibrar Escala
+                    </button>
+                    <div id="calibrationStatus" class="text-sm text-gray-600">
+                        <p>Status: Não calibrado</p>
+                        <p id="scaleInfo">Escala: 1 pixel = ? metros</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controles -->
+            <div class="mb-6">
+                <div class="flex gap-2 mb-4">
+                    <button id="drawMode" class="flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                        ✏️ Desenhar
+                    </button>
+                    <button id="panMode" class="flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors">
+                        🤚 Navegar
+                    </button>
+                </div>
+                
+                <!-- Seletor de Cor -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Cor do Polígono</label>
+                    <div class="flex gap-2 items-center">
+                        <input type="color" id="polygonColor" value="#3b82f6" class="w-12 h-8 rounded border border-gray-300 cursor-pointer">
+                        <div class="flex gap-1">
+                            <button class="color-preset w-6 h-6 rounded border-2 border-white shadow-sm cursor-pointer" style="background-color: #3b82f6;" data-color="#3b82f6" title="Azul"></button>
+                            <button class="color-preset w-6 h-6 rounded border-2 border-white shadow-sm cursor-pointer" style="background-color: #ef4444;" data-color="#ef4444" title="Vermelho"></button>
+                            <button class="color-preset w-6 h-6 rounded border-2 border-white shadow-sm cursor-pointer" style="background-color: #10b981;" data-color="#10b981" title="Verde"></button>
+                            <button class="color-preset w-6 h-6 rounded border-2 border-white shadow-sm cursor-pointer" style="background-color: #f59e0b;" data-color="#f59e0b" title="Amarelo"></button>
+                            <button class="color-preset w-6 h-6 rounded border-2 border-white shadow-sm cursor-pointer" style="background-color: #8b5cf6;" data-color="#8b5cf6" title="Roxo"></button>
+                            <button class="color-preset w-6 h-6 rounded border-2 border-white shadow-sm cursor-pointer" style="background-color: #ffffff;" data-color="#ffffff" title="Branco"></button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex gap-2 mb-4">
+                    <button id="finishPolygon" class="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:bg-gray-300" disabled>
+                        ✅ Finalizar
+                    </button>
+                    <button id="cancelPolygon" class="flex-1 bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:bg-gray-300" disabled>
+                        ❌ Cancelar
+                    </button>
+                </div>
+
+                <div class="flex gap-2 mb-4">
+                    <button id="zoomIn" class="flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors">
+                        🔍+ Zoom In
+                    </button>
+                    <button id="zoomOut" class="flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors">
+                        🔍- Zoom Out
+                    </button>
+                </div>
+
+                <button id="resetView" class="w-full bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors mb-4">
+                    🔄 Resetar Visualização
                 </button>
             </div>
-            <!-- Mobile Menu -->
-            <div id="mobileMenu" class="hidden md:hidden mt-4 space-y-2">
-                <button onclick="showSection('dashboard')" class="block w-full text-left px-4 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg">Dashboard</button>
-                <button onclick="showSection('fornecedores')" class="block w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 rounded-lg">Fornecedores</button>
-                <button onclick="showSection('insumos')" class="block w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 rounded-lg">Insumos</button>
-                <button onclick="showSection('cotacoes')" class="block w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 rounded-lg">Cotações</button>
-            </div>
-        </div>
-    </header>
 
-    <div class="container mx-auto px-4 py-8">
-        <!-- Dashboard -->
-        <div id="dashboard" class="section fade-in">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-blue-500">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-600 text-sm font-medium">Total Fornecedores</p>
-                            <p id="totalFornecedores" class="text-3xl font-bold text-gray-800">0</p>
-                        </div>
-                        <div class="bg-blue-100 p-3 rounded-full">
-                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-600 text-sm font-medium">Total Insumos</p>
-                            <p id="totalInsumos" class="text-3xl font-bold text-gray-800">0</p>
-                        </div>
-                        <div class="bg-green-100 p-3 rounded-full">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-purple-500">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-600 text-sm font-medium">Total Cotações</p>
-                            <p id="totalCotacoes" class="text-3xl font-bold text-gray-800">0</p>
-                        </div>
-                        <div class="bg-purple-100 p-3 rounded-full">
-                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-orange-500">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-600 text-sm font-medium">Economia Média</p>
-                            <p id="economiaMedia" class="text-3xl font-bold text-gray-800">R$ 0</p>
-                        </div>
-                        <div class="bg-orange-100 p-3 rounded-full">
-                            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                            </svg>
-                        </div>
-                    </div>
+            <!-- Lista de Polígonos -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">Polígonos Criados</h3>
+                <div id="polygonList" class="space-y-2">
+                    <p class="text-gray-500 text-sm">Nenhum polígono criado ainda</p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Ações Rápidas</h3>
-                    <div class="space-y-3">
-                        <button onclick="showSection('fornecedores')" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                            </svg>
-                            <span>Cadastrar Fornecedor</span>
-                        </button>
-                        <button onclick="showSection('insumos')" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                            </svg>
-                            <span>Cadastrar Insumo</span>
-                        </button>
-                        <button onclick="showSection('cotacoes')" class="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                            </svg>
-                            <span>Nova Cotação</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Últimas Cotações</h3>
-                    <div id="ultimasCotacoes" class="space-y-3">
-                        <p class="text-gray-500 text-center py-8">Nenhuma cotação realizada ainda</p>
-                    </div>
-                </div>
+            <!-- Exportar -->
+            <div class="space-y-2">
+                <button id="exportCSV" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:bg-gray-300" disabled>
+                    📊 Exportar CSV
+                </button>
+                <button id="exportJSON" class="w-full bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:bg-gray-300" disabled>
+                    📋 Exportar JSON
+                </button>
             </div>
         </div>
 
-        <!-- Fornecedores -->
-        <div id="fornecedores" class="section hidden">
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Gestão de Fornecedores</h2>
-                    <button onclick="showFornecedorForm()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        <!-- Área Principal -->
+        <div class="flex-1 bg-gray-100 relative">
+            <div id="canvasContainer" class="canvas-container w-full h-full">
+                <div id="noImageMessage" class="absolute inset-0 flex items-center justify-center text-gray-500 z-10">
+                    <div class="text-center">
+                        <svg class="mx-auto h-16 w-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
-                        <span>Novo Fornecedor</span>
-                    </button>
+                        <p class="text-lg">Carregue uma imagem para começar</p>
+                    </div>
                 </div>
-
-                <!-- Formulário de Fornecedor -->
-                <div id="fornecedorForm" class="hidden mb-8 p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Cadastrar Novo Fornecedor</h3>
-                    <form onsubmit="saveFornecedor(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Código</label>
-                            <input type="text" id="fornecedorCodigo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
-                            <input type="text" id="fornecedorNome" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Endereço</label>
-                            <input type="text" id="fornecedorEndereco" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Contato</label>
-                            <input type="text" id="fornecedorContato" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                            <input type="email" id="fornecedorEmail" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
-                            <input type="tel" id="fornecedorTelefone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                        </div>
-                        <div class="md:col-span-2 flex space-x-4">
-                            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">Salvar</button>
-                            <button type="button" onclick="hideFornecedorForm()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">Cancelar</button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Lista de Fornecedores -->
-                <div id="fornecedoresList" class="overflow-x-auto">
-                    <table class="w-full table-auto">
-                        <thead>
-                            <tr class="bg-gray-100">
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Código</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Nome</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Contato</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Email</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Telefone</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fornecedoresTableBody">
-                            <tr>
-                                <td colspan="6" class="px-4 py-8 text-center text-gray-500">Nenhum fornecedor cadastrado</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <img id="mainImage" class="absolute" style="display: none; z-index: 1;">
             </div>
+            <!-- SVG em camada separada -->
+            <svg id="polygonSvg" class="absolute inset-0 w-full h-full pointer-events-none" style="display: none; z-index: 20;">
+            </svg>
         </div>
+    </div>
 
-        <!-- Insumos -->
-        <div id="insumos" class="section hidden">
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Gestão de Insumos</h2>
-                    <button onclick="showInsumoForm()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                        </svg>
-                        <span>Novo Insumo</span>
-                    </button>
-                </div>
-
-                <!-- Formulário de Insumo -->
-                <div id="insumoForm" class="hidden mb-8 p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Cadastrar Novo Insumo</h3>
-                    <form onsubmit="saveInsumo(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
-                            <input type="text" id="insumoNome" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
-                            <input type="text" id="insumoCategoria" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Unidade de Medida</label>
-                            <select id="insumoUnidade" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
-                                <option value="">Selecione...</option>
-                                <option value="kg">Quilograma (kg)</option>
-                                <option value="g">Grama (g)</option>
-                                <option value="l">Litro (l)</option>
-                                <option value="ml">Mililitro (ml)</option>
-                                <option value="un">Unidade (un)</option>
-                                <option value="m">Metro (m)</option>
-                                <option value="m²">Metro quadrado (m²)</option>
-                                <option value="m³">Metro cúbico (m³)</option>
-                                <option value="cx">Caixa (cx)</option>
-                                <option value="pc">Peça (pc)</option>
-                            </select>
-                        </div>
-                        <div class="md:col-span-3 flex space-x-4">
-                            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">Salvar</button>
-                            <button type="button" onclick="hideInsumoForm()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">Cancelar</button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Lista de Insumos -->
-                <div id="insumosList" class="overflow-x-auto">
-                    <table class="w-full table-auto">
-                        <thead>
-                            <tr class="bg-gray-100">
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Nome</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Categoria</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Unidade</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="insumosTableBody">
-                            <tr>
-                                <td colspan="4" class="px-4 py-8 text-center text-gray-500">Nenhum insumo cadastrado</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Cotações -->
-        <div id="cotacoes" class="section hidden">
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Gestão de Cotações</h2>
-                    <button onclick="showCotacaoForm()" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                        </svg>
-                        <span>Nova Cotação</span>
-                    </button>
-                </div>
-
-                <!-- Formulário de Nova Cotação -->
-                <div id="cotacaoForm" class="hidden mb-8 p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Criar Nova Cotação</h3>
-                    <form onsubmit="createCotacao(event)" class="space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Número/Identificação</label>
-                                <input type="text" id="cotacaoNumero" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" required>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Data</label>
-                                <input type="date" id="cotacaoData" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" required>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-3">Selecionar Fornecedores para esta Cotação</label>
-                            
-                            <!-- Campo de busca -->
-                            <div class="mb-3">
-                                <div class="relative">
-                                    <input 
-                                        type="text" 
-                                        id="fornecedorSearch" 
-                                        placeholder="Buscar por nome ou código do fornecedor..."
-                                        class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                        oninput="filterFornecedores()"
-                                    >
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div id="fornecedoresSelection" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-4 bg-white rounded-lg border border-gray-200 max-h-60 overflow-y-auto">
-                                <p class="text-gray-500 text-center col-span-full">Nenhum fornecedor cadastrado</p>
-                            </div>
-                            <p class="text-sm text-gray-600 mt-2">Selecione pelo menos um fornecedor para participar da cotação</p>
-                        </div>
-                        
-                        <div class="flex space-x-4">
-                            <button type="submit" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">Criar Cotação</button>
-                            <button type="button" onclick="hideCotacaoForm()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors">Cancelar</button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Lista de Cotações -->
-                <div id="cotacoesList" class="overflow-x-auto">
-                    <table class="w-full table-auto">
-                        <thead>
-                            <tr class="bg-gray-100">
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Número</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Data</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Itens</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cotacoesTableBody">
-                            <tr>
-                                <td colspan="5" class="px-4 py-8 text-center text-gray-500">Nenhuma cotação criada</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Editor de Cotação -->
-        <div id="cotacaoEditor" class="section hidden">
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-800">Editar Cotação</h2>
-                        <p id="cotacaoEditorInfo" class="text-gray-600"></p>
-                    </div>
-                    <div class="flex space-x-3 mt-4 md:mt-0">
-                        <button onclick="addItemToCotacao()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                            </svg>
-                            <span>Adicionar Item</span>
-                        </button>
-                        <button onclick="showCotacaoResults()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">Ver Resultados</button>
-                        <button onclick="fecharCotacao()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span>Fechar Cotação</span>
-                        </button>
-                        <button onclick="showSection('cotacoes')" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">Voltar</button>
-                    </div>
-                </div>
-
-                <!-- Adicionar Item -->
-                <div id="addItemForm" class="hidden mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h4 class="font-semibold text-gray-800 mb-3">Adicionar Item à Cotação</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Insumo</label>
-                            <select id="itemInsumo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                                <option value="">Selecione um insumo...</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Quantidade</label>
-                            <input type="number" id="itemQuantidade" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                        </div>
-                        <div class="flex items-end space-x-2">
-                            <button onclick="saveItemToCotacao()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">Adicionar</button>
-                            <button onclick="cancelAddItem()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">Cancelar</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Itens da Cotação por Fornecedor -->
-                <div id="cotacaoItens" class="space-y-6">
-                    <p class="text-gray-500 text-center py-8">Adicione itens à cotação para começar</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Resultados da Cotação -->
-        <div id="cotacaoResults" class="section hidden">
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-800">Resultados da Cotação</h2>
-                        <p id="cotacaoResultsInfo" class="text-gray-600"></p>
-                    </div>
-                    <div class="flex space-x-3 mt-4 md:mt-0">
-                        <button onclick="exportToPDF()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <span>PDF</span>
-                        </button>
-                        <button onclick="exportToExcel()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <span>Excel</span>
-                        </button>
-                        <button onclick="backToCotacaoEditor()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">Voltar</button>
-                    </div>
-                </div>
-
-                <!-- Resumo por Fornecedor -->
-                <div class="mb-8">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Resumo por Fornecedor</h3>
-                    <div id="resumoFornecedores" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    </div>
-                </div>
-
-                <!-- Tabela Comparativa -->
-                <div class="mb-8">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Comparativo Detalhado</h3>
-                    <div class="overflow-x-auto">
-                        <table id="tabelaComparativa" class="w-full table-auto border-collapse border border-gray-300">
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Rodapé com Responsáveis -->
-                <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Informações da Cotação</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h4 class="font-medium text-gray-700 mb-3">Responsáveis por Fornecedor:</h4>
-                            <div id="responsaveisFornecedores" class="space-y-2">
-                            </div>
-                        </div>
-                        <div id="responsavelFechamento" class="hidden">
-                            <h4 class="font-medium text-gray-700 mb-3">Fechamento da Cotação:</h4>
-                            <div class="bg-white p-4 rounded-lg border">
-                                <p class="text-sm text-gray-600">Fechada e aprovada por:</p>
-                                <p id="nomeResponsavelFechamento" class="font-semibold text-gray-800"></p>
-                                <p id="dataFechamento" class="text-sm text-gray-500"></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- Modal para nomear polígono -->
+    <div id="nameModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-lg p-6 w-96">
+            <h3 class="text-lg font-semibold mb-4">Nome do Polígono</h3>
+            <input type="text" id="polygonNameInput" class="w-full border border-gray-300 rounded-lg px-3 py-2 mb-4" placeholder="Ex: Lote 1, Área Verde...">
+            <div class="flex gap-2">
+                <button id="confirmName" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Confirmar</button>
+                <button id="cancelName" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">Cancelar</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Dados globais
-        let fornecedores = JSON.parse(localStorage.getItem('fornecedores') || '[]');
-        let insumos = JSON.parse(localStorage.getItem('insumos') || '[]');
-        let cotacoes = JSON.parse(localStorage.getItem('cotacoes') || '[]');
-        let currentCotacao = null;
-
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', function() {
-            // Definir data atual
-            document.getElementById('cotacaoData').value = new Date().toISOString().split('T')[0];
+        class PolygonMapper {
+            constructor() {
+                this.image = null;
+                this.scale = 1;
+                this.offsetX = 0;
+                this.offsetY = 0;
+                this.isDragging = false;
+                this.lastMouseX = 0;
+                this.lastMouseY = 0;
+                this.mode = 'draw'; // 'draw', 'pan', ou 'calibrate'
+                
+                this.polygons = [];
+                this.currentPolygon = [];
+                this.isDrawing = false;
+                this.polygonCounter = 1;
+                this.currentColor = '#3b82f6';
+                
+                // Calibração de escala
+                this.isCalibrating = false;
+                this.calibrationPoints = [];
+                this.pixelsPerMeter = null;
+                this.isCalibrated = false;
+                
+                this.initElements();
+                this.bindEvents();
+            }
             
-            // Carregar dados
-            loadFornecedores();
-            loadInsumos();
-            loadCotacoes();
-            updateDashboard();
+            initElements() {
+                this.uploadArea = document.getElementById('uploadArea');
+                this.imageInput = document.getElementById('imageInput');
+                this.canvasContainer = document.getElementById('canvasContainer');
+                this.mainImage = document.getElementById('mainImage');
+                this.polygonSvg = document.getElementById('polygonSvg');
+                this.noImageMessage = document.getElementById('noImageMessage');
+                this.polygonList = document.getElementById('polygonList');
+                
+                this.drawModeBtn = document.getElementById('drawMode');
+                this.panModeBtn = document.getElementById('panMode');
+                this.calibrateModeBtn = document.getElementById('calibrateMode');
+                this.knownDistanceInput = document.getElementById('knownDistance');
+                this.calibrationStatus = document.getElementById('calibrationStatus');
+                this.scaleInfo = document.getElementById('scaleInfo');
+                this.finishBtn = document.getElementById('finishPolygon');
+                this.cancelBtn = document.getElementById('cancelPolygon');
+                this.zoomInBtn = document.getElementById('zoomIn');
+                this.zoomOutBtn = document.getElementById('zoomOut');
+                this.resetViewBtn = document.getElementById('resetView');
+                this.exportCSVBtn = document.getElementById('exportCSV');
+                this.exportJSONBtn = document.getElementById('exportJSON');
+                
+                this.polygonColorInput = document.getElementById('polygonColor');
+                this.colorPresets = document.querySelectorAll('.color-preset');
+                
+                this.nameModal = document.getElementById('nameModal');
+                this.polygonNameInput = document.getElementById('polygonNameInput');
+                this.confirmNameBtn = document.getElementById('confirmName');
+                this.cancelNameBtn = document.getElementById('cancelName');
+            }
             
-            // Mostrar dashboard por padrão
-            showSection('dashboard');
-        });
-
-        // Navegação
-        function showSection(sectionName) {
-            // Esconder todas as seções
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.add('hidden');
-            });
+            bindEvents() {
+                // Upload de imagem
+                this.uploadArea.addEventListener('click', () => this.imageInput.click());
+                this.imageInput.addEventListener('change', (e) => this.loadImage(e.target.files[0]));
+                
+                // Drag and drop
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('dragover');
+                });
+                this.uploadArea.addEventListener('dragleave', () => {
+                    this.uploadArea.classList.remove('dragover');
+                });
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                    this.loadImage(e.dataTransfer.files[0]);
+                });
+                
+                // Controles de modo
+                this.drawModeBtn.addEventListener('click', () => this.setMode('draw'));
+                this.panModeBtn.addEventListener('click', () => this.setMode('pan'));
+                this.calibrateModeBtn.addEventListener('click', () => this.startCalibration());
+                
+                // Controles de polígono
+                this.finishBtn.addEventListener('click', () => this.finishPolygon());
+                this.cancelBtn.addEventListener('click', () => this.cancelPolygon());
+                
+                // Controles de zoom
+                this.zoomInBtn.addEventListener('click', () => this.zoom(1.2));
+                this.zoomOutBtn.addEventListener('click', () => this.zoom(0.8));
+                this.resetViewBtn.addEventListener('click', () => this.resetView());
+                
+                // Exportar
+                this.exportCSVBtn.addEventListener('click', () => this.exportCSV());
+                this.exportJSONBtn.addEventListener('click', () => this.exportJSON());
+                
+                // Seletor de cor
+                this.polygonColorInput.addEventListener('change', (e) => {
+                    this.currentColor = e.target.value;
+                });
+                
+                this.colorPresets.forEach(preset => {
+                    preset.addEventListener('click', () => {
+                        const color = preset.dataset.color;
+                        this.currentColor = color;
+                        this.polygonColorInput.value = color;
+                    });
+                });
+                
+                // Canvas events
+                this.canvasContainer.addEventListener('mousedown', (e) => this.onMouseDown(e));
+                this.canvasContainer.addEventListener('mousemove', (e) => this.onMouseMove(e));
+                this.canvasContainer.addEventListener('mouseup', () => this.onMouseUp());
+                this.canvasContainer.addEventListener('wheel', (e) => this.onWheel(e));
+                this.canvasContainer.addEventListener('contextmenu', (e) => e.preventDefault()); // Desabilitar menu de contexto
+                
+                // Modal events
+                this.confirmNameBtn.addEventListener('click', () => this.confirmPolygonName());
+                this.cancelNameBtn.addEventListener('click', () => this.cancelPolygonName());
+                this.polygonNameInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.confirmPolygonName();
+                });
+            }
             
-            // Mostrar seção selecionada
-            document.getElementById(sectionName).classList.remove('hidden');
+            loadImage(file) {
+                if (!file || !file.type.startsWith('image/')) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.mainImage.src = e.target.result;
+                    this.mainImage.onload = () => {
+                        this.image = this.mainImage;
+                        this.noImageMessage.style.display = 'none';
+                        this.mainImage.style.display = 'block';
+                        this.polygonSvg.style.display = 'block';
+                        this.resetView();
+                        this.updateExportButtons();
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
             
-            // Atualizar navegação
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('text-blue-600', 'font-medium');
-                btn.classList.add('text-gray-600');
-            });
+            setMode(mode) {
+                this.mode = mode;
+                this.canvasContainer.className = `canvas-container ${mode === 'pan' ? 'pan-mode' : ''}`;
+                
+                // Reset button styles
+                this.drawModeBtn.className = 'flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors';
+                this.panModeBtn.className = 'flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors';
+                this.calibrateModeBtn.className = 'w-full bg-orange-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors';
+                
+                if (mode === 'draw') {
+                    this.drawModeBtn.className = 'flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors';
+                } else if (mode === 'pan') {
+                    this.panModeBtn.className = 'flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors';
+                } else if (mode === 'calibrate') {
+                    this.calibrateModeBtn.className = 'w-full bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors';
+                    this.calibrateModeBtn.textContent = '✅ Calibrando... (2 pontos)';
+                }
+            }
             
-            // Destacar botão ativo
-            event.target.classList.remove('text-gray-600');
-            event.target.classList.add('text-blue-600', 'font-medium');
+            onMouseDown(e) {
+                if (!this.image) return;
+                
+                // Verificar se clicou em um ponto existente
+                if (e.target.classList.contains('point')) {
+                    return; // Não adicionar novo ponto se clicou em um ponto existente
+                }
+                
+                const rect = this.canvasContainer.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Botão direito sempre permite arrastar
+                if (e.button === 2) {
+                    this.isDragging = true;
+                    this.lastMouseX = x;
+                    this.lastMouseY = y;
+                    e.preventDefault(); // Prevenir menu de contexto
+                } else if (this.mode === 'pan' && e.button === 0) {
+                    this.isDragging = true;
+                    this.lastMouseX = x;
+                    this.lastMouseY = y;
+                } else if (this.mode === 'draw' && e.button === 0) {
+                    this.addPoint(x, y);
+                } else if (this.mode === 'calibrate' && e.button === 0) {
+                    this.addCalibrationPoint(x, y);
+                }
+            }
             
-            // Fechar menu mobile
-            document.getElementById('mobileMenu').classList.add('hidden');
-        }
-
-        function toggleMobileMenu() {
-            document.getElementById('mobileMenu').classList.toggle('hidden');
-        }
-
-        // Dashboard
-        function updateDashboard() {
-            document.getElementById('totalFornecedores').textContent = fornecedores.length;
-            document.getElementById('totalInsumos').textContent = insumos.length;
-            document.getElementById('totalCotacoes').textContent = cotacoes.length;
+            onMouseMove(e) {
+                if (!this.image) return;
+                
+                const rect = this.canvasContainer.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                if (this.isDragging) {
+                    const deltaX = x - this.lastMouseX;
+                    const deltaY = y - this.lastMouseY;
+                    
+                    this.offsetX += deltaX;
+                    this.offsetY += deltaY;
+                    
+                    this.updateImageTransform();
+                    this.updatePolygonPositions();
+                    
+                    this.lastMouseX = x;
+                    this.lastMouseY = y;
+                }
+            }
             
-            // Calcular economia média (simulado)
-            const economia = cotacoes.length > 0 ? (Math.random() * 1000 + 500).toFixed(2) : '0';
-            document.getElementById('economiaMedia').textContent = `R$ ${economia}`;
+            onMouseUp() {
+                this.isDragging = false;
+            }
             
-            // Mostrar últimas cotações
-            const ultimasCotacoesDiv = document.getElementById('ultimasCotacoes');
-            if (cotacoes.length === 0) {
-                ultimasCotacoesDiv.innerHTML = '<p class="text-gray-500 text-center py-8">Nenhuma cotação realizada ainda</p>';
-            } else {
-                const ultimasCotacoes = cotacoes.slice(-3).reverse();
-                ultimasCotacoesDiv.innerHTML = ultimasCotacoes.map(cotacao => `
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                            <p class="font-medium text-gray-800">${cotacao.numero}</p>
-                            <p class="text-sm text-gray-600">${new Date(cotacao.data).toLocaleDateString('pt-BR')}</p>
+            onWheel(e) {
+                if (!this.image) return;
+                e.preventDefault();
+                
+                const rect = this.canvasContainer.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+                const newScale = Math.max(0.1, Math.min(5, this.scale * zoomFactor));
+                
+                if (newScale !== this.scale) {
+                    const scaleChange = newScale / this.scale;
+                    this.offsetX = mouseX - (mouseX - this.offsetX) * scaleChange;
+                    this.offsetY = mouseY - (mouseY - this.offsetY) * scaleChange;
+                    this.scale = newScale;
+                    
+                    this.updateImageTransform();
+                    this.updatePolygonPositions();
+                }
+            }
+            
+            zoom(factor) {
+                if (!this.image) return;
+                
+                const rect = this.canvasContainer.getBoundingClientRect();
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const newScale = Math.max(0.1, Math.min(5, this.scale * factor));
+                
+                if (newScale !== this.scale) {
+                    const scaleChange = newScale / this.scale;
+                    this.offsetX = centerX - (centerX - this.offsetX) * scaleChange;
+                    this.offsetY = centerY - (centerY - this.offsetY) * scaleChange;
+                    this.scale = newScale;
+                    
+                    this.updateImageTransform();
+                    this.updatePolygonPositions();
+                }
+            }
+            
+            resetView() {
+                if (!this.image) return;
+                
+                const containerRect = this.canvasContainer.getBoundingClientRect();
+                const imageAspect = this.image.naturalWidth / this.image.naturalHeight;
+                const containerAspect = containerRect.width / containerRect.height;
+                
+                if (imageAspect > containerAspect) {
+                    this.scale = containerRect.width / this.image.naturalWidth;
+                } else {
+                    this.scale = containerRect.height / this.image.naturalHeight;
+                }
+                
+                this.scale *= 0.9; // Margem
+                
+                this.offsetX = (containerRect.width - this.image.naturalWidth * this.scale) / 2;
+                this.offsetY = (containerRect.height - this.image.naturalHeight * this.scale) / 2;
+                
+                this.updateImageTransform();
+                this.updatePolygonPositions();
+            }
+            
+            updateImageTransform() {
+                this.mainImage.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px) scale(${this.scale})`;
+                this.mainImage.style.transformOrigin = '0 0';
+            }
+            
+            addPoint(x, y) {
+                if (!this.isDrawing) {
+                    this.isDrawing = true;
+                    this.finishBtn.disabled = false;
+                    this.cancelBtn.disabled = false;
+                }
+                
+                // Converter coordenadas da tela para coordenadas da imagem
+                const imageX = (x - this.offsetX) / this.scale;
+                const imageY = (y - this.offsetY) / this.scale;
+                
+                this.currentPolygon.push({ x: imageX, y: imageY, screenX: x, screenY: y });
+                this.renderCurrentPolygon();
+                this.createPointElement(x, y, this.currentPolygon.length - 1);
+                
+                // Atualizar o primeiro ponto para indicar que pode fechar o polígono
+                if (this.currentPolygon.length >= 3) {
+                    this.updateFirstPointStyle();
+                }
+            }
+            
+            createPointElement(x, y, index) {
+                const point = document.createElement('div');
+                point.className = 'point';
+                point.style.left = x + 'px';
+                point.style.top = y + 'px';
+                point.dataset.index = index;
+                point.dataset.isCurrentPoint = 'true';
+                
+                // Adicionar evento para fechar polígono clicando no primeiro ponto
+                if (index === 0 && this.currentPolygon.length >= 3) {
+                    point.style.background = '#10b981'; // Verde para indicar que pode fechar
+                    point.title = 'Clique para fechar o polígono';
+                    
+                    point.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        if (this.mode === 'draw' && this.isDrawing && this.currentPolygon.length >= 3) {
+                            this.finishPolygon();
+                        }
+                    });
+                } else {
+                    point.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        if (this.mode === 'draw' && this.isDrawing) {
+                            this.removePoint(parseInt(index));
+                        }
+                    });
+                }
+                
+                // Prevenir que o ponto interfira com cliques na imagem
+                point.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                });
+                
+                this.canvasContainer.appendChild(point);
+            }
+            
+            updateFirstPointStyle() {
+                const firstPoint = this.canvasContainer.querySelector('.point[data-index="0"][data-is-current-point="true"]');
+                if (firstPoint && this.currentPolygon.length >= 3) {
+                    firstPoint.style.background = '#10b981';
+                    firstPoint.title = 'Clique para fechar o polígono';
+                    
+                    // Remover eventos antigos e adicionar novo
+                    const newFirstPoint = firstPoint.cloneNode(true);
+                    firstPoint.parentNode.replaceChild(newFirstPoint, firstPoint);
+                    
+                    newFirstPoint.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        if (this.mode === 'draw' && this.isDrawing && this.currentPolygon.length >= 3) {
+                            this.finishPolygon();
+                        }
+                    });
+                    
+                    newFirstPoint.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                    });
+                }
+            }
+            
+            removePoint(index) {
+                this.currentPolygon.splice(index, 1);
+                this.clearCurrentPolygonDisplay();
+                
+                // Recriar todos os pontos com índices atualizados
+                this.currentPolygon.forEach((point, i) => {
+                    this.createPointElement(point.screenX, point.screenY, i);
+                });
+                
+                this.renderCurrentPolygon();
+                
+                // Atualizar o primeiro ponto se ainda temos 3+ pontos
+                if (this.currentPolygon.length >= 3) {
+                    this.updateFirstPointStyle();
+                }
+                
+                if (this.currentPolygon.length === 0) {
+                    this.cancelPolygon();
+                }
+            }
+            
+            renderCurrentPolygon() {
+                if (this.currentPolygon.length < 2) return;
+                
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const pathData = this.currentPolygon.map((point, index) => 
+                    `${index === 0 ? 'M' : 'L'} ${point.screenX} ${point.screenY}`
+                ).join(' ') + (this.currentPolygon.length > 2 ? ' Z' : '');
+                
+                path.setAttribute('d', pathData);
+                path.className = 'polygon-path';
+                path.style.stroke = this.currentColor;
+                path.style.strokeWidth = '3';
+                path.style.fill = this.hexToRgba(this.currentColor, 0.4);
+                
+                // Remove path anterior se existir
+                const existingPath = this.polygonSvg.querySelector('.current-polygon');
+                if (existingPath) existingPath.remove();
+                
+                path.classList.add('current-polygon');
+                this.polygonSvg.appendChild(path);
+            }
+            
+            finishPolygon() {
+                if (this.currentPolygon.length < 3) {
+                    alert('Um polígono precisa ter pelo menos 3 pontos!');
+                    return;
+                }
+                
+                this.showNameModal();
+            }
+            
+            showNameModal() {
+                this.polygonNameInput.value = `Polígono ${this.polygonCounter}`;
+                this.nameModal.style.display = 'flex';
+                this.polygonNameInput.focus();
+                this.polygonNameInput.select();
+            }
+            
+            confirmPolygonName() {
+                const name = this.polygonNameInput.value.trim() || `Polígono ${this.polygonCounter}`;
+                
+                const polygon = {
+                    id: Date.now(),
+                    name: name,
+                    points: [...this.currentPolygon],
+                    area: this.calculatePolygonArea(this.currentPolygon),
+                    color: this.currentColor
+                };
+                
+                this.polygons.push(polygon);
+                this.polygonCounter++;
+                
+                this.finalizeCurrentPolygon();
+                this.nameModal.style.display = 'none';
+                this.updatePolygonList();
+                this.updateExportButtons();
+            }
+            
+            cancelPolygonName() {
+                this.nameModal.style.display = 'none';
+            }
+            
+            finalizeCurrentPolygon() {
+                const polygon = this.polygons[this.polygons.length - 1];
+                
+                // Remover path temporário
+                const currentPath = this.polygonSvg.querySelector('.current-polygon');
+                if (currentPath) {
+                    currentPath.remove();
+                }
+                
+                // Criar novo path permanente com coordenadas corretas
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const pathData = polygon.points.map((point, index) => {
+                    const screenX = point.x * this.scale + this.offsetX;
+                    const screenY = point.y * this.scale + this.offsetY;
+                    return `${index === 0 ? 'M' : 'L'} ${screenX} ${screenY}`;
+                }).join(' ') + ' Z';
+                
+                path.setAttribute('d', pathData);
+                path.style.stroke = polygon.color;
+                path.style.strokeWidth = '3';
+                path.style.fill = this.hexToRgba(polygon.color, 0.4);
+                path.dataset.polygonId = polygon.id;
+                path.style.pointerEvents = 'none';
+                
+                this.polygonSvg.appendChild(path);
+                
+                this.clearCurrentPolygonDisplay();
+                this.currentPolygon = [];
+                this.isDrawing = false;
+                this.finishBtn.disabled = true;
+                this.cancelBtn.disabled = true;
+            }
+            
+            cancelPolygon() {
+                this.clearCurrentPolygonDisplay();
+                this.currentPolygon = [];
+                this.isDrawing = false;
+                this.finishBtn.disabled = true;
+                this.cancelBtn.disabled = true;
+            }
+            
+            clearCurrentPolygonDisplay() {
+                // Remove apenas pontos do polígono atual
+                const currentPoints = this.canvasContainer.querySelectorAll('.point[data-is-current-point="true"]');
+                currentPoints.forEach(point => point.remove());
+                
+                // Remove path temporário
+                const currentPath = this.polygonSvg.querySelector('.current-polygon');
+                if (currentPath) currentPath.remove();
+            }
+            
+            calculatePolygonArea(points) {
+                if (points.length < 3) return 0;
+                
+                let areaInPixels = 0;
+                for (let i = 0; i < points.length; i++) {
+                    const j = (i + 1) % points.length;
+                    areaInPixels += points[i].x * points[j].y;
+                    areaInPixels -= points[j].x * points[i].y;
+                }
+                areaInPixels = Math.abs(areaInPixels) / 2;
+                
+                // Converter para metros quadrados se calibrado
+                if (this.isCalibrated && this.pixelsPerMeter) {
+                    return areaInPixels / (this.pixelsPerMeter * this.pixelsPerMeter);
+                }
+                
+                return areaInPixels;
+            }
+            
+            hexToRgba(hex, alpha) {
+                const r = parseInt(hex.slice(1, 3), 16);
+                const g = parseInt(hex.slice(3, 5), 16);
+                const b = parseInt(hex.slice(5, 7), 16);
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            }
+            
+            updatePolygonPositions() {
+                // Atualizar posições dos paths SVG
+                this.polygonSvg.querySelectorAll('path').forEach(path => {
+                    const polygonId = path.dataset.polygonId;
+                    if (polygonId) {
+                        const polygon = this.polygons.find(p => p.id == polygonId);
+                        if (polygon) {
+                            const pathData = polygon.points.map((point, index) => {
+                                const screenX = point.x * this.scale + this.offsetX;
+                                const screenY = point.y * this.scale + this.offsetY;
+                                return `${index === 0 ? 'M' : 'L'} ${screenX} ${screenY}`;
+                            }).join(' ') + ' Z';
+                            path.setAttribute('d', pathData);
+                            
+                            // Manter as cores originais
+                            path.style.stroke = polygon.color;
+                            path.style.fill = this.hexToRgba(polygon.color, 0.4);
+                        }
+                    }
+                });
+                
+                // Atualizar path atual se existir
+                if (this.currentPolygon.length > 0) {
+                    this.currentPolygon.forEach(point => {
+                        point.screenX = point.x * this.scale + this.offsetX;
+                        point.screenY = point.y * this.scale + this.offsetY;
+                    });
+                    this.renderCurrentPolygon();
+                    
+                    // Atualizar posições dos pontos visuais
+                    const currentPoints = this.canvasContainer.querySelectorAll('.point[data-is-current-point="true"]');
+                    currentPoints.forEach((pointElement, index) => {
+                        if (this.currentPolygon[index]) {
+                            pointElement.style.left = this.currentPolygon[index].screenX + 'px';
+                            pointElement.style.top = this.currentPolygon[index].screenY + 'px';
+                        }
+                    });
+                }
+                
+                // Atualizar pontos de calibração se existirem
+                const calibrationPoints = this.canvasContainer.querySelectorAll('[data-calibration-point="true"]');
+                calibrationPoints.forEach((pointElement, index) => {
+                    if (this.calibrationPoints[index]) {
+                        const screenX = this.calibrationPoints[index].x * this.scale + this.offsetX;
+                        const screenY = this.calibrationPoints[index].y * this.scale + this.offsetY;
+                        pointElement.style.left = screenX + 'px';
+                        pointElement.style.top = screenY + 'px';
+                        this.calibrationPoints[index].screenX = screenX;
+                        this.calibrationPoints[index].screenY = screenY;
+                    }
+                });
+            }
+            
+            updatePolygonList() {
+                if (this.polygons.length === 0) {
+                    this.polygonList.innerHTML = '<p class="text-gray-500 text-sm">Nenhum polígono criado ainda</p>';
+                    return;
+                }
+                
+                this.polygonList.innerHTML = this.polygons.map(polygon => `
+                    <div class="bg-gray-50 rounded-lg p-3 border">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex items-center gap-2">
+                                <div class="w-4 h-4 rounded border border-gray-300" style="background-color: ${polygon.color};"></div>
+                                <h4 class="font-medium text-gray-800">${polygon.name}</h4>
+                            </div>
+                            <button onclick="mapper.deletePolygon(${polygon.id})" class="text-red-500 hover:text-red-700 text-sm">
+                                🗑️
+                            </button>
                         </div>
-                        <button onclick="editCotacao('${cotacao.id}')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Editar</button>
+                        <div class="text-sm text-gray-600">
+                            <p>Pontos: ${polygon.points.length}</p>
+                            <p>Área: ${polygon.area.toFixed(2)} ${this.isCalibrated ? 'm²' : 'px²'}</p>
+                        </div>
                     </div>
                 `).join('');
             }
-        }
-
-        // Fornecedores
-        function showFornecedorForm() {
-            document.getElementById('fornecedorForm').classList.remove('hidden');
-            document.getElementById('fornecedorCodigo').focus();
-        }
-
-        function hideFornecedorForm() {
-            document.getElementById('fornecedorForm').classList.add('hidden');
-            document.getElementById('fornecedorForm').querySelector('form').reset();
-        }
-
-        function saveFornecedor(event) {
-            event.preventDefault();
             
-            const fornecedor = {
-                id: Date.now().toString(),
-                codigo: document.getElementById('fornecedorCodigo').value,
-                nome: document.getElementById('fornecedorNome').value,
-                endereco: document.getElementById('fornecedorEndereco').value,
-                contato: document.getElementById('fornecedorContato').value,
-                email: document.getElementById('fornecedorEmail').value,
-                telefone: document.getElementById('fornecedorTelefone').value
-            };
-            
-            fornecedores.push(fornecedor);
-            localStorage.setItem('fornecedores', JSON.stringify(fornecedores));
-            
-            loadFornecedores();
-            hideFornecedorForm();
-            updateDashboard();
-            
-            alert('Fornecedor cadastrado com sucesso!');
-        }
-
-        function loadFornecedores() {
-            const tbody = document.getElementById('fornecedoresTableBody');
-            
-            if (fornecedores.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Nenhum fornecedor cadastrado</td></tr>';
-                return;
+            deletePolygon(id) {
+                this.polygons = this.polygons.filter(p => p.id !== id);
+                
+                // Remove path do SVG
+                const path = this.polygonSvg.querySelector(`[data-polygon-id="${id}"]`);
+                if (path) path.remove();
+                
+                this.updatePolygonList();
+                this.updateExportButtons();
             }
             
-            tbody.innerHTML = fornecedores.map(fornecedor => `
-                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                    <td class="px-4 py-3 text-sm text-gray-800">${fornecedor.codigo}</td>
-                    <td class="px-4 py-3 text-sm text-gray-800">${fornecedor.nome}</td>
-                    <td class="px-4 py-3 text-sm text-gray-800">${fornecedor.contato}</td>
-                    <td class="px-4 py-3 text-sm text-gray-800">${fornecedor.email}</td>
-                    <td class="px-4 py-3 text-sm text-gray-800">${fornecedor.telefone}</td>
-                    <td class="px-4 py-3 text-sm">
-                        <button onclick="deleteFornecedor('${fornecedor.id}')" class="text-red-600 hover:text-red-800 font-medium">Excluir</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function deleteFornecedor(id) {
-            if (confirm('Tem certeza que deseja excluir este fornecedor?')) {
-                fornecedores = fornecedores.filter(f => f.id !== id);
-                localStorage.setItem('fornecedores', JSON.stringify(fornecedores));
-                loadFornecedores();
-                updateDashboard();
-            }
-        }
-
-        // Insumos
-        function showInsumoForm() {
-            document.getElementById('insumoForm').classList.remove('hidden');
-            document.getElementById('insumoNome').focus();
-        }
-
-        function hideInsumoForm() {
-            document.getElementById('insumoForm').classList.add('hidden');
-            document.getElementById('insumoForm').querySelector('form').reset();
-        }
-
-        function saveInsumo(event) {
-            event.preventDefault();
-            
-            const insumo = {
-                id: Date.now().toString(),
-                nome: document.getElementById('insumoNome').value,
-                categoria: document.getElementById('insumoCategoria').value,
-                unidade: document.getElementById('insumoUnidade').value
-            };
-            
-            insumos.push(insumo);
-            localStorage.setItem('insumos', JSON.stringify(insumos));
-            
-            loadInsumos();
-            hideInsumoForm();
-            updateDashboard();
-            
-            alert('Insumo cadastrado com sucesso!');
-        }
-
-        function loadInsumos() {
-            const tbody = document.getElementById('insumosTableBody');
-            
-            if (insumos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Nenhum insumo cadastrado</td></tr>';
-                return;
+            updateExportButtons() {
+                const hasData = this.polygons.length > 0;
+                this.exportCSVBtn.disabled = !hasData;
+                this.exportJSONBtn.disabled = !hasData;
             }
             
-            tbody.innerHTML = insumos.map(insumo => `
-                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                    <td class="px-4 py-3 text-sm text-gray-800">${insumo.nome}</td>
-                    <td class="px-4 py-3 text-sm text-gray-800">${insumo.categoria}</td>
-                    <td class="px-4 py-3 text-sm text-gray-800">${insumo.unidade}</td>
-                    <td class="px-4 py-3 text-sm">
-                        <button onclick="deleteInsumo('${insumo.id}')" class="text-red-600 hover:text-red-800 font-medium">Excluir</button>
-                    </td>
-                </tr>
-            `).join('');
-            
-            // Atualizar select de insumos no editor de cotação
-            updateInsumoSelect();
-        }
-
-        function deleteInsumo(id) {
-            if (confirm('Tem certeza que deseja excluir este insumo?')) {
-                insumos = insumos.filter(i => i.id !== id);
-                localStorage.setItem('insumos', JSON.stringify(insumos));
-                loadInsumos();
-                updateDashboard();
-            }
-        }
-
-        function updateInsumoSelect() {
-            const select = document.getElementById('itemInsumo');
-            select.innerHTML = '<option value="">Selecione um insumo...</option>' +
-                insumos.map(insumo => `<option value="${insumo.id}">${insumo.nome} (${insumo.unidade})</option>`).join('');
-        }
-
-        // Cotações
-        function showCotacaoForm() {
-            if (fornecedores.length === 0) {
-                alert('Cadastre fornecedores antes de criar uma cotação.');
-                return;
+            exportCSV() {
+                if (this.polygons.length === 0) return;
+                
+                const unit = this.isCalibrated ? 'm²' : 'px²';
+                let csv = `Nome,Pontos,Area (${unit}),Cor,Coordenadas\n`;
+                this.polygons.forEach(polygon => {
+                    const coords = polygon.points.map(p => `(${p.x.toFixed(2)},${p.y.toFixed(2)})`).join(';');
+                    csv += `"${polygon.name}",${polygon.points.length},${polygon.area.toFixed(2)},"${polygon.color}","${coords}"\n`;
+                });
+                
+                this.downloadFile(csv, 'poligonos.csv', 'text/csv');
             }
             
-            loadFornecedoresSelection();
-            document.getElementById('cotacaoForm').classList.remove('hidden');
-            document.getElementById('cotacaoNumero').focus();
-        }
-
-        function loadFornecedoresSelection() {
-            const container = document.getElementById('fornecedoresSelection');
-            
-            if (fornecedores.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center col-span-full">Nenhum fornecedor cadastrado</p>';
-                return;
+            exportJSON() {
+                if (this.polygons.length === 0) return;
+                
+                const data = {
+                    timestamp: new Date().toISOString(),
+                    calibration: {
+                        isCalibrated: this.isCalibrated,
+                        pixelsPerMeter: this.pixelsPerMeter,
+                        unit: this.isCalibrated ? 'meters' : 'pixels'
+                    },
+                    imageInfo: this.image ? {
+                        width: this.image.naturalWidth,
+                        height: this.image.naturalHeight
+                    } : null,
+                    polygons: this.polygons.map(polygon => ({
+                        name: polygon.name,
+                        points: polygon.points.map(p => ({ x: p.x, y: p.y })),
+                        area: polygon.area,
+                        areaUnit: this.isCalibrated ? 'm²' : 'px²',
+                        color: polygon.color,
+                        pointCount: polygon.points.length
+                    }))
+                };
+                
+                this.downloadFile(JSON.stringify(data, null, 2), 'poligonos.json', 'application/json');
             }
             
-            renderFornecedoresSelection(fornecedores);
-        }
-
-        function renderFornecedoresSelection(fornecedoresList) {
-            const container = document.getElementById('fornecedoresSelection');
-            
-            if (fornecedoresList.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center col-span-full">Nenhum fornecedor encontrado</p>';
-                return;
-            }
-            
-            container.innerHTML = fornecedoresList.map(fornecedor => `
-                <label class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 cursor-pointer transition-colors">
-                    <input type="checkbox" value="${fornecedor.id}" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-800 truncate">${fornecedor.nome}</p>
-                        <p class="text-xs text-gray-600 truncate">Código: ${fornecedor.codigo}</p>
-                        <p class="text-xs text-gray-600 truncate">${fornecedor.contato}</p>
-                    </div>
-                </label>
-            `).join('');
-        }
-
-        function filterFornecedores() {
-            const searchTerm = document.getElementById('fornecedorSearch').value.toLowerCase().trim();
-            
-            if (searchTerm === '') {
-                renderFornecedoresSelection(fornecedores);
-                return;
-            }
-            
-            const filteredFornecedores = fornecedores.filter(fornecedor => 
-                fornecedor.nome.toLowerCase().includes(searchTerm) ||
-                fornecedor.codigo.toLowerCase().includes(searchTerm) ||
-                fornecedor.contato.toLowerCase().includes(searchTerm)
-            );
-            
-            renderFornecedoresSelection(filteredFornecedores);
-        }
-
-        function hideCotacaoForm() {
-            document.getElementById('cotacaoForm').classList.add('hidden');
-            document.getElementById('cotacaoForm').querySelector('form').reset();
-            document.getElementById('fornecedorSearch').value = '';
-        }
-
-        function createCotacao(event) {
-            event.preventDefault();
-            
-            // Verificar fornecedores selecionados
-            const fornecedoresSelecionados = [];
-            document.querySelectorAll('#fornecedoresSelection input[type="checkbox"]:checked').forEach(checkbox => {
-                fornecedoresSelecionados.push(checkbox.value);
-            });
-            
-            if (fornecedoresSelecionados.length === 0) {
-                alert('Selecione pelo menos um fornecedor para participar da cotação.');
-                return;
-            }
-            
-            const cotacao = {
-                id: Date.now().toString(),
-                numero: document.getElementById('cotacaoNumero').value,
-                data: document.getElementById('cotacaoData').value,
-                fornecedoresSelecionados: fornecedoresSelecionados,
-                itens: [],
-                precos: {}
-            };
-            
-            cotacoes.push(cotacao);
-            localStorage.setItem('cotacoes', JSON.stringify(cotacoes));
-            
-            loadCotacoes();
-            hideCotacaoForm();
-            updateDashboard();
-            
-            // Ir direto para o editor
-            editCotacao(cotacao.id);
-        }
-
-        function loadCotacoes() {
-            const tbody = document.getElementById('cotacoesTableBody');
-            
-            if (cotacoes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">Nenhuma cotação criada</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = cotacoes.map(cotacao => `
-                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                    <td class="px-4 py-3 text-sm text-gray-800">${cotacao.numero}</td>
-                    <td class="px-4 py-3 text-sm text-gray-800">${new Date(cotacao.data).toLocaleDateString('pt-BR')}</td>
-                    <td class="px-4 py-3 text-sm text-gray-800">${cotacao.itens.length} itens</td>
-                    <td class="px-4 py-3 text-sm">
-                        <span class="px-2 py-1 text-xs font-medium rounded-full ${cotacao.fechada ? 'bg-red-100 text-red-800' : cotacao.itens.length > 0 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
-                            ${cotacao.fechada ? 'Fechada' : cotacao.itens.length > 0 ? 'Em andamento' : 'Criada'}
-                        </span>
-                    </td>
-                    <td class="px-4 py-3 text-sm space-x-2">
-                        ${cotacao.fechada ? 
-                            `<button onclick="viewCotacao('${cotacao.id}')" class="text-blue-600 hover:text-blue-800 font-medium">Visualizar</button>` : 
-                            `<button onclick="editCotacao('${cotacao.id}')" class="text-blue-600 hover:text-blue-800 font-medium">Editar</button>
-                             <button onclick="fecharCotacaoFromList('${cotacao.id}')" class="text-orange-600 hover:text-orange-800 font-medium">Fechar</button>`
-                        }
-                        ${!cotacao.fechada ? 
-                            `<button onclick="deleteCotacao('${cotacao.id}')" class="text-red-600 hover:text-red-800 font-medium">Excluir</button>` : 
-                            ''
-                        }
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function deleteCotacao(id) {
-            if (confirm('Tem certeza que deseja excluir esta cotação?')) {
-                cotacoes = cotacoes.filter(c => c.id !== id);
-                localStorage.setItem('cotacoes', JSON.stringify(cotacoes));
-                loadCotacoes();
-                updateDashboard();
-            }
-        }
-
-        function editCotacao(id) {
-            currentCotacao = cotacoes.find(c => c.id === id);
-            if (!currentCotacao) return;
-            
-            if (currentCotacao.fechada) {
-                alert('Esta cotação já foi fechada e não pode ser editada.');
-                return;
-            }
-            
-            document.getElementById('cotacaoEditorInfo').textContent = 
-                `${currentCotacao.numero} - ${new Date(currentCotacao.data).toLocaleDateString('pt-BR')}`;
-            
-            updateInsumoSelect();
-            loadCotacaoItens();
-            showSection('cotacaoEditor');
-        }
-
-        function viewCotacao(id) {
-            currentCotacao = cotacoes.find(c => c.id === id);
-            if (!currentCotacao) return;
-            
-            // Ir direto para os resultados da cotação fechada
-            document.getElementById('cotacaoResultsInfo').textContent = 
-                `${currentCotacao.numero} - ${new Date(currentCotacao.data).toLocaleDateString('pt-BR')} (FECHADA)`;
-            
-            generateResults();
-            showSection('cotacaoResults');
-        }
-
-        function fecharCotacao() {
-            if (currentCotacao.itens.length === 0) {
-                alert('Adicione itens à cotação antes de fechá-la.');
-                return;
-            }
-
-            const responsavel = prompt('Digite seu nome para confirmar o fechamento da cotação:');
-            if (!responsavel || responsavel.trim() === '') {
-                return;
-            }
-
-            if (confirm('Tem certeza que deseja fechar esta cotação? Após fechada, ela não poderá mais ser editada.')) {
-                currentCotacao.fechada = true;
-                currentCotacao.responsavelFechamento = responsavel.trim();
-                currentCotacao.dataFechamento = new Date().toISOString();
-
-                // Salvar no localStorage
-                const cotacaoIndex = cotacoes.findIndex(c => c.id === currentCotacao.id);
-                cotacoes[cotacaoIndex] = currentCotacao;
-                localStorage.setItem('cotacoes', JSON.stringify(cotacoes));
-
-                alert('Cotação fechada com sucesso!');
-                showSection('cotacoes');
-                loadCotacoes();
-            }
-        }
-
-        function fecharCotacaoFromList(cotacaoId) {
-            const cotacao = cotacoes.find(c => c.id === cotacaoId);
-            if (!cotacao) return;
-
-            if (cotacao.itens.length === 0) {
-                alert('Adicione itens à cotação antes de fechá-la.');
-                return;
-            }
-
-            const responsavel = prompt('Digite seu nome para confirmar o fechamento da cotação:');
-            if (!responsavel || responsavel.trim() === '') {
-                return;
-            }
-
-            if (confirm('Tem certeza que deseja fechar esta cotação? Após fechada, ela não poderá mais ser editada.')) {
-                cotacao.fechada = true;
-                cotacao.responsavelFechamento = responsavel.trim();
-                cotacao.dataFechamento = new Date().toISOString();
-
-                // Salvar no localStorage
-                const cotacaoIndex = cotacoes.findIndex(c => c.id === cotacaoId);
-                cotacoes[cotacaoIndex] = cotacao;
-                localStorage.setItem('cotacoes', JSON.stringify(cotacoes));
-
-                alert('Cotação fechada com sucesso!');
-                loadCotacoes();
-                updateDashboard();
-            }
-        }
-
-        function addItemToCotacao() {
-            if (insumos.length === 0) {
-                alert('Cadastre insumos antes de adicionar itens à cotação.');
-                return;
-            }
-            document.getElementById('addItemForm').classList.remove('hidden');
-        }
-
-        function cancelAddItem() {
-            document.getElementById('addItemForm').classList.add('hidden');
-            document.getElementById('addItemForm').querySelector('form').reset();
-        }
-
-        function saveItemToCotacao() {
-            const insumoId = document.getElementById('itemInsumo').value;
-            const quantidade = parseFloat(document.getElementById('itemQuantidade').value);
-            
-            if (!insumoId || !quantidade) {
-                alert('Preencha todos os campos.');
-                return;
-            }
-            
-            const insumo = insumos.find(i => i.id === insumoId);
-            if (!insumo) return;
-            
-            // Verificar se item já existe
-            const existingItem = currentCotacao.itens.find(item => item.insumoId === insumoId);
-            if (existingItem) {
-                alert('Este insumo já foi adicionado à cotação.');
-                return;
-            }
-            
-            const item = {
-                id: Date.now().toString(),
-                insumoId: insumoId,
-                insumo: insumo,
-                quantidade: quantidade
-            };
-            
-            currentCotacao.itens.push(item);
-            
-            // Salvar no localStorage
-            const cotacaoIndex = cotacoes.findIndex(c => c.id === currentCotacao.id);
-            cotacoes[cotacaoIndex] = currentCotacao;
-            localStorage.setItem('cotacoes', JSON.stringify(cotacoes));
-            
-            loadCotacaoItens();
-            cancelAddItem();
-        }
-
-        function loadCotacaoItens() {
-            const container = document.getElementById('cotacaoItens');
-            
-            if (currentCotacao.itens.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center py-8">Adicione itens à cotação para começar</p>';
-                return;
-            }
-            
-            // Usar fornecedores selecionados para esta cotação
-            const fornecedoresAtivos = currentCotacao.fornecedoresSelecionados ? 
-                fornecedores.filter(f => currentCotacao.fornecedoresSelecionados.includes(f.id)) :
-                fornecedores.slice(0, 5); // Fallback para cotações antigas
-            
-            container.innerHTML = fornecedoresAtivos.map(fornecedor => `
-                <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                        <div class="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
-                        ${fornecedor.nome}
-                    </h4>
-                    <div class="space-y-3">
-                        ${currentCotacao.itens.map(item => `
-                            <div class="flex items-center justify-between bg-white p-3 rounded-lg border">
-                                <div class="flex-1">
-                                    <p class="font-medium text-gray-800">${item.insumo.nome}</p>
-                                    <p class="text-sm text-gray-600">${item.quantidade} ${item.insumo.unidade}</p>
-                                </div>
-                                <div class="flex items-center space-x-3">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="text-sm text-gray-600">R$</span>
-                                        <input 
-                                            type="number" 
-                                            step="0.01" 
-                                            placeholder="0,00"
-                                            value="${getPreco(item.id, fornecedor.id)}"
-                                            onchange="updatePreco('${item.id}', '${fornecedor.id}', this.value)"
-                                            class="w-24 px-2 py-1 border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        >
-                                    </div>
-                                    <div class="text-sm text-gray-600 min-w-[80px] text-right">
-                                        Total: R$ <span id="total-${item.id}-${fornecedor.id}">${calculateItemTotal(item.id, fornecedor.id)}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                        <div class="border-t pt-3 mt-3">
-                            <div class="flex justify-between items-center font-semibold text-gray-800">
-                                <span>Total do Fornecedor:</span>
-                                <span>R$ <span id="fornecedor-total-${fornecedor.id}">${calculateFornecedorTotal(fornecedor.id)}</span></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function getPreco(itemId, fornecedorId) {
-            const key = `${itemId}-${fornecedorId}`;
-            return currentCotacao.precos[key] || '';
-        }
-
-        function updatePreco(itemId, fornecedorId, preco) {
-            const key = `${itemId}-${fornecedorId}`;
-            currentCotacao.precos[key] = parseFloat(preco) || 0;
-            
-            // Salvar no localStorage
-            const cotacaoIndex = cotacoes.findIndex(c => c.id === currentCotacao.id);
-            cotacoes[cotacaoIndex] = currentCotacao;
-            localStorage.setItem('cotacoes', JSON.stringify(cotacoes));
-            
-            // Atualizar totais
-            document.getElementById(`total-${itemId}-${fornecedorId}`).textContent = calculateItemTotal(itemId, fornecedorId);
-            document.getElementById(`fornecedor-total-${fornecedorId}`).textContent = calculateFornecedorTotal(fornecedorId);
-        }
-
-        function calculateItemTotal(itemId, fornecedorId) {
-            const item = currentCotacao.itens.find(i => i.id === itemId);
-            const preco = getPreco(itemId, fornecedorId);
-            if (!item || !preco) return '0,00';
-            
-            const total = item.quantidade * parseFloat(preco);
-            return total.toFixed(2).replace('.', ',');
-        }
-
-        function calculateFornecedorTotal(fornecedorId) {
-            let total = 0;
-            currentCotacao.itens.forEach(item => {
-                const preco = getPreco(item.id, fornecedorId);
-                if (preco) {
-                    total += item.quantidade * parseFloat(preco);
+            startCalibration() {
+                if (!this.image) {
+                    alert('Carregue uma imagem primeiro!');
+                    return;
                 }
-            });
-            return total.toFixed(2).replace('.', ',');
-        }
-
-        function showCotacaoResults() {
-            if (currentCotacao.itens.length === 0) {
-                alert('Adicione itens à cotação antes de ver os resultados.');
-                return;
+                
+                this.isCalibrating = true;
+                this.calibrationPoints = [];
+                this.setMode('calibrate');
+                this.clearCalibrationDisplay();
+                
+                // Cancelar polígono atual se estiver desenhando
+                if (this.isDrawing) {
+                    this.cancelPolygon();
+                }
+                
+                alert('Clique em dois pontos na imagem que representam uma distância conhecida.');
             }
             
-            document.getElementById('cotacaoResultsInfo').textContent = 
-                `${currentCotacao.numero} - ${new Date(currentCotacao.data).toLocaleDateString('pt-BR')}`;
+            addCalibrationPoint(x, y) {
+                if (this.calibrationPoints.length >= 2) return;
+                
+                // Converter coordenadas da tela para coordenadas da imagem
+                const imageX = (x - this.offsetX) / this.scale;
+                const imageY = (y - this.offsetY) / this.scale;
+                
+                this.calibrationPoints.push({ x: imageX, y: imageY, screenX: x, screenY: y });
+                this.createCalibrationPoint(x, y, this.calibrationPoints.length - 1);
+                
+                if (this.calibrationPoints.length === 2) {
+                    this.finishCalibration();
+                }
+            }
             
-            generateResults();
-            showSection('cotacaoResults');
-        }
+            createCalibrationPoint(x, y, index) {
+                const point = document.createElement('div');
+                point.className = 'point';
+                point.style.left = x + 'px';
+                point.style.top = y + 'px';
+                point.style.background = '#f59e0b'; // Amarelo para calibração
+                point.style.transform = 'translate(-50%, -50%) scale(1.5)';
+                point.dataset.calibrationPoint = 'true';
+                point.title = `Ponto de calibração ${index + 1}`;
+                
+                this.canvasContainer.appendChild(point);
+            }
+            
+            finishCalibration() {
+                const knownDistance = parseFloat(this.knownDistanceInput.value);
+                if (!knownDistance || knownDistance <= 0) {
+                    alert('Digite uma distância válida em metros!');
+                    this.cancelCalibration();
+                    return;
+                }
+                
+                // Calcular distância em pixels entre os dois pontos
+                const p1 = this.calibrationPoints[0];
+                const p2 = this.calibrationPoints[1];
+                const pixelDistance = Math.sqrt(
+                    Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2)
+                );
+                
+                this.pixelsPerMeter = pixelDistance / knownDistance;
+                this.isCalibrated = true;
+                
+                this.updateCalibrationStatus();
+                this.clearCalibrationDisplay();
+                this.setMode('draw');
+                this.isCalibrating = false;
+                
+                // Reset button text
+                this.calibrateModeBtn.textContent = '📏 Calibrar Escala';
+                
+                // Recalcular áreas dos polígonos existentes
+                this.polygons.forEach(polygon => {
+                    polygon.area = this.calculatePolygonArea(polygon.points);
+                });
+                this.updatePolygonList();
+                
+                alert(`Calibração concluída! 1 metro = ${this.pixelsPerMeter.toFixed(2)} pixels`);
+            }
+            
+            cancelCalibration() {
+                this.isCalibrating = false;
+                this.calibrationPoints = [];
+                this.clearCalibrationDisplay();
+                this.setMode('draw');
+                this.calibrateModeBtn.textContent = '📏 Calibrar Escala';
+            }
+            
+            clearCalibrationDisplay() {
+                const calibrationPoints = this.canvasContainer.querySelectorAll('[data-calibration-point="true"]');
+                calibrationPoints.forEach(point => point.remove());
+            }
+            
+            updateCalibrationStatus() {
+                if (this.isCalibrated) {
+                    this.calibrationStatus.innerHTML = `
+                        <p class="text-green-600">Status: Calibrado ✅</p>
+                        <p>1 pixel = ${(1/this.pixelsPerMeter).toFixed(4)} metros</p>
+                    `;
+                    this.scaleInfo.textContent = `Escala: 1 metro = ${this.pixelsPerMeter.toFixed(2)} pixels`;
+                } else {
+                    this.calibrationStatus.innerHTML = `
+                        <p>Status: Não calibrado</p>
+                        <p id="scaleInfo">Escala: 1 pixel = ? metros</p>
+                    `;
+                }
+            }
 
-        function generateResults() {
-            const fornecedoresAtivos = currentCotacao.fornecedoresSelecionados ? 
-                fornecedores.filter(f => currentCotacao.fornecedoresSelecionados.includes(f.id)) :
-                fornecedores.slice(0, 5); // Fallback para cotações antigas
-            
-            // Resumo por fornecedor
-            const resumoContainer = document.getElementById('resumoFornecedores');
-            const totaisFornecedores = fornecedoresAtivos.map(fornecedor => {
-                const total = parseFloat(calculateFornecedorTotal(fornecedor.id).replace(',', '.'));
-                return { fornecedor, total };
-            }).sort((a, b) => a.total - b.total);
-            
-            resumoContainer.innerHTML = totaisFornecedores.map((item, index) => `
-                <div class="bg-white p-4 rounded-lg border-2 ${index === 0 ? 'border-green-500 bg-green-50' : 'border-gray-200'}">
-                    <div class="flex items-center justify-between mb-2">
-                        <h4 class="font-semibold text-gray-800">${item.fornecedor.nome}</h4>
-                        ${index === 0 ? '<span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full">MELHOR</span>' : ''}
-                    </div>
-                    <p class="text-2xl font-bold ${index === 0 ? 'text-green-600' : 'text-gray-800'}">
-                        R$ ${item.total.toFixed(2).replace('.', ',')}
-                    </p>
-                    <p class="text-sm text-gray-600">${item.fornecedor.contato}</p>
-                </div>
-            `).join('');
-            
-            // Tabela comparativa
-            const tabela = document.getElementById('tabelaComparativa');
-            const basicHeaders = ['Item', 'Qtd', 'Unidade'];
-            const fornecedorHeaders = fornecedoresAtivos.map(f => 
-                `<th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700 min-w-[150px]">
-                    <div class="space-y-1">
-                        <div class="font-semibold">${f.nome}</div>
-                        <div class="font-normal text-xs text-gray-600">${f.contato}</div>
-                        <div class="font-normal text-xs text-gray-600">${f.telefone}</div>
-                    </div>
-                </th>`
-            );
-            
-            tabela.innerHTML = `
-                <thead>
-                    <tr class="bg-gray-100">
-                        ${basicHeaders.map(header => `<th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700">${header}</th>`).join('')}
-                        ${fornecedorHeaders.join('')}
-                        <th class="border border-gray-300 px-3 py-2 text-left text-sm font-medium text-gray-700">Melhor Preço</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${currentCotacao.itens.map(item => {
-                        const precos = fornecedoresAtivos.map(f => parseFloat(getPreco(item.id, f.id)) || 0);
-                        const menorPreco = Math.min(...precos.filter(p => p > 0));
-                        const melhorFornecedor = fornecedoresAtivos[precos.indexOf(menorPreco)];
-                        
-                        return `
-                            <tr class="hover:bg-gray-50">
-                                <td class="border border-gray-300 px-3 py-2 text-sm">${item.insumo.nome}</td>
-                                <td class="border border-gray-300 px-3 py-2 text-sm text-center">${item.quantidade}</td>
-                                <td class="border border-gray-300 px-3 py-2 text-sm text-center">${item.insumo.unidade}</td>
-                                ${fornecedoresAtivos.map((f, index) => {
-                                    const preco = precos[index];
-                                    const isMinimo = preco === menorPreco && preco > 0;
-                                    return `<td class="border border-gray-300 px-3 py-2 text-sm text-center ${isMinimo ? 'bg-green-100 font-semibold' : ''}">
-                                        ${preco > 0 ? `R$ ${preco.toFixed(2).replace('.', ',')}` : '-'}
-                                    </td>`;
-                                }).join('')}
-                                <td class="border border-gray-300 px-3 py-2 text-sm text-center font-semibold text-green-600">
-                                    ${melhorFornecedor ? melhorFornecedor.nome : '-'}
-                                </td>
-                            </tr>
-                        `;
-                    }).join('')}
-                </tbody>
-            `;
-
-            // Responsáveis por fornecedor
-            const responsaveisContainer = document.getElementById('responsaveisFornecedores');
-            responsaveisContainer.innerHTML = fornecedoresAtivos.map(fornecedor => `
-                <div class="flex items-center justify-between bg-white p-3 rounded-lg border">
-                    <span class="font-medium text-gray-800">${fornecedor.nome}:</span>
-                    <span class="text-gray-600">${fornecedor.contato}</span>
-                </div>
-            `).join('');
-
-            // Informações de fechamento
-            const responsavelFechamentoDiv = document.getElementById('responsavelFechamento');
-            if (currentCotacao.fechada) {
-                responsavelFechamentoDiv.classList.remove('hidden');
-                document.getElementById('nomeResponsavelFechamento').textContent = currentCotacao.responsavelFechamento;
-                document.getElementById('dataFechamento').textContent = 
-                    `Em ${new Date(currentCotacao.dataFechamento).toLocaleDateString('pt-BR')} às ${new Date(currentCotacao.dataFechamento).toLocaleTimeString('pt-BR')}`;
-            } else {
-                responsavelFechamentoDiv.classList.add('hidden');
+            downloadFile(content, filename, mimeType) {
+                const blob = new Blob([content], { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
             }
         }
-
-        function backToCotacaoEditor() {
-            // Se a cotação está fechada, voltar para a lista de cotações
-            if (currentCotacao && currentCotacao.fechada) {
-                showSection('cotacoes');
-            } else {
-                showSection('cotacaoEditor');
-            }
-        }
-
-        function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            const fornecedoresAtivos = currentCotacao.fornecedoresSelecionados ? 
-                fornecedores.filter(f => currentCotacao.fornecedoresSelecionados.includes(f.id)) :
-                fornecedores.slice(0, 5);
-            
-            // Título
-            doc.setFontSize(20);
-            doc.text('Relatório de Cotação', 20, 20);
-            
-            // Informações da cotação
-            doc.setFontSize(12);
-            doc.text(`Cotação: ${currentCotacao.numero}`, 20, 35);
-            doc.text(`Data: ${new Date(currentCotacao.data).toLocaleDateString('pt-BR')}`, 20, 45);
-            
-            // Resumo por fornecedor
-            doc.setFontSize(14);
-            doc.text('Resumo por Fornecedor:', 20, 65);
-            
-            let y = 75;
-            fornecedoresAtivos.forEach(fornecedor => {
-                const total = calculateFornecedorTotal(fornecedor.id);
-                doc.setFontSize(10);
-                doc.text(`${fornecedor.nome}: R$ ${total}`, 25, y);
-                y += 10;
-            });
-
-            // Salvar
-            doc.save(`cotacao-${currentCotacao.numero}.pdf`);
-        }
-
-        function exportToExcel() {
-            const wb = XLSX.utils.book_new();
-            
-            const fornecedoresAtivos = currentCotacao.fornecedoresSelecionados ? 
-                fornecedores.filter(f => currentCotacao.fornecedoresSelecionados.includes(f.id)) :
-                fornecedores.slice(0, 5);
-            
-            // Dados da planilha
-            const data = [
-                ['Cotação', currentCotacao.numero],
-                ['Data', new Date(currentCotacao.data).toLocaleDateString('pt-BR')],
-                [''],
-                ['Item', 'Quantidade', 'Unidade', ...fornecedoresAtivos.map(f => f.nome)]
-            ];
-            
-            currentCotacao.itens.forEach(item => {
-                const row = [
-                    item.insumo.nome,
-                    item.quantidade,
-                    item.insumo.unidade,
-                    ...fornecedoresAtivos.map(f => {
-                        const preco = getPreco(item.id, f.id);
-                        return preco ? parseFloat(preco) : '';
-                    })
-                ];
-                data.push(row);
-            });
-            
-            const ws = XLSX.utils.aoa_to_sheet(data);
-            XLSX.utils.book_append_sheet(wb, ws, 'Cotação');
-            
-            XLSX.writeFile(wb, `cotacao-${currentCotacao.numero}.xlsx`);
-        }
+        
+        // Inicializar aplicação
+        const mapper = new PolygonMapper();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972cae4c15831ced',t:'MTc1NTgwNjA1MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'979eccbe174b01ad',t:'MTc1NzAwMjY3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
