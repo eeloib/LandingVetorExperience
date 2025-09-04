@@ -176,7 +176,7 @@
                         <p class="text-lg">Carregue uma imagem para começar</p>
                     </div>
                 </div>
-                <img id="mainImage" class="absolute" style="display: none; z-index: 1;">
+                <img id="mainImage" class="absolute" style="display: none; z-index: 1; pointer-events: none;">
             </div>
             <!-- SVG em camada separada -->
             <svg id="polygonSvg" class="absolute inset-0 w-full h-full pointer-events-none" style="display: none; z-index: 20;">
@@ -220,8 +220,18 @@
                 this.pixelsPerMeter = null;
                 this.isCalibrated = false;
                 
+                // Proteção da imagem
+                this.imageProtectionInterval = null;
+                
                 this.initElements();
                 this.bindEvents();
+                
+                // Limpar proteção quando a página for fechada
+                window.addEventListener('beforeunload', () => {
+                    if (this.imageProtectionInterval) {
+                        clearInterval(this.imageProtectionInterval);
+                    }
+                });
             }
             
             initElements() {
@@ -326,20 +336,92 @@
                 
                 const reader = new FileReader();
                 reader.onload = (e) => {
+                    // Proteção máxima para a imagem
+                    this.protectImage();
                     this.mainImage.src = e.target.result;
+                    
                     this.mainImage.onload = () => {
                         this.image = this.mainImage;
                         this.noImageMessage.style.display = 'none';
-                        this.mainImage.style.display = 'block';
                         this.polygonSvg.style.display = 'block';
                         this.resetView();
                         this.updateExportButtons();
+                        
+                        // Proteção contínua da imagem
+                        this.startImageProtection();
                     };
                 };
                 reader.readAsDataURL(file);
             }
             
+            protectImage() {
+                if (!this.mainImage) return;
+                
+                // Garantir que a imagem está no DOM
+                if (!this.canvasContainer.contains(this.mainImage)) {
+                    this.canvasContainer.appendChild(this.mainImage);
+                }
+                
+                // Aplicar todas as proteções de uma vez
+                this.mainImage.style.cssText = `
+                    display: block !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                    position: absolute !important;
+                    z-index: 1 !important;
+                    pointer-events: none !important;
+                    max-width: none !important;
+                    max-height: none !important;
+                    width: auto !important;
+                    height: auto !important;
+                    transform: translate(${this.offsetX}px, ${this.offsetY}px) scale(${this.scale}) !important;
+                    transform-origin: 0 0 !important;
+                `;
+                
+                // Forçar atributos HTML também
+                this.mainImage.setAttribute('style', this.mainImage.style.cssText);
+                
+                // Prevenir modificações no elemento
+                try {
+                    Object.defineProperty(this.mainImage.style, 'display', {
+                        value: 'block',
+                        writable: false,
+                        configurable: false
+                    });
+                } catch(e) {
+                    // Ignorar erros de definição de propriedade
+                }
+            }
+            
+            startImageProtection() {
+                // Verificação contínua da imagem
+                this.imageProtectionInterval = setInterval(() => {
+                    if (this.mainImage && this.image) {
+                        // Verificar se a imagem ainda está visível
+                        const computedStyle = window.getComputedStyle(this.mainImage);
+                        if (computedStyle.display === 'none' || 
+                            computedStyle.visibility === 'hidden' || 
+                            computedStyle.opacity === '0') {
+                            
+                            // Restaurar imagem imediatamente
+                            this.protectImage();
+                        }
+                        
+                        // Garantir que a imagem está no DOM
+                        if (!this.canvasContainer.contains(this.mainImage)) {
+                            this.canvasContainer.appendChild(this.mainImage);
+                            this.protectImage();
+                        }
+                    }
+                }, 100); // Verificar a cada 100ms
+            }
+            
             setMode(mode) {
+                // PROTEÇÃO ANTES DE MUDAR MODO
+                if (this.image) {
+                    this.protectImage();
+                }
+                
                 this.mode = mode;
                 this.canvasContainer.className = `canvas-container ${mode === 'pan' ? 'pan-mode' : ''}`;
                 
@@ -355,6 +437,13 @@
                 } else if (mode === 'calibrate') {
                     this.calibrateModeBtn.className = 'w-full bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors';
                     this.calibrateModeBtn.textContent = '✅ Calibrando... (2 pontos)';
+                }
+                
+                // PROTEÇÃO APÓS MUDAR MODO
+                if (this.image) {
+                    setTimeout(() => {
+                        this.protectImage();
+                    }, 5);
                 }
             }
             
@@ -478,8 +567,29 @@
             }
             
             updateImageTransform() {
-                this.mainImage.style.transform = `translate(${this.offsetX}px, ${this.offsetY}px) scale(${this.scale})`;
-                this.mainImage.style.transformOrigin = '0 0';
+                if (!this.mainImage) return;
+                
+                // Proteger antes da transformação
+                this.protectImage();
+                
+                // Aplicar transformação mantendo proteções
+                const transform = `translate(${this.offsetX}px, ${this.offsetY}px) scale(${this.scale})`;
+                this.mainImage.style.setProperty('transform', transform, 'important');
+                this.mainImage.style.setProperty('transform-origin', '0 0', 'important');
+                
+                // Verificação tripla para garantir visibilidade
+                requestAnimationFrame(() => {
+                    if (this.mainImage) {
+                        this.protectImage();
+                        
+                        // Segunda verificação
+                        setTimeout(() => {
+                            if (this.mainImage) {
+                                this.protectImage();
+                            }
+                        }, 50);
+                    }
+                });
             }
             
             addPoint(x, y) {
@@ -610,7 +720,7 @@
             
             finishPolygon() {
                 if (this.currentPolygon.length < 3) {
-                    alert('Um polígono precisa ter pelo menos 3 pontos!');
+                    this.showNotification('Um polígono precisa ter pelo menos 3 pontos!', 'error');
                     return;
                 }
                 
@@ -862,8 +972,12 @@
             
             startCalibration() {
                 if (!this.image) {
+                    this.showNotification('Carregue uma imagem primeiro!', 'error');
                     return;
                 }
+                
+                // PROTEÇÃO EXTRA ANTES DA CALIBRAÇÃO
+                this.protectImage();
                 
                 // Cancelar polígono atual se estiver desenhando
                 if (this.isDrawing) {
@@ -878,6 +992,15 @@
                 this.isCalibrating = true;
                 this.calibrationPoints = [];
                 this.setMode('calibrate');
+                
+                // PROTEÇÃO EXTRA APÓS CONFIGURAR CALIBRAÇÃO
+                setTimeout(() => {
+                    this.protectImage();
+                    this.updateImageTransform();
+                }, 10);
+                
+                // Mostrar instrução inicial
+                this.showNotification('Clique no primeiro ponto da distância conhecida', 'info');
             }
             
             addCalibrationPoint(x, y) {
@@ -890,9 +1013,40 @@
                 this.calibrationPoints.push({ x: imageX, y: imageY, screenX: x, screenY: y });
                 this.createCalibrationPoint(x, y, this.calibrationPoints.length - 1);
                 
-                if (this.calibrationPoints.length === 2) {
+                if (this.calibrationPoints.length === 1) {
+                    this.showNotification('Clique no segundo ponto para completar a calibração', 'info');
+                } else if (this.calibrationPoints.length === 2) {
                     this.finishCalibration();
                 }
+            }
+            
+            showNotification(message, type = 'info') {
+                // Remover notificação anterior se existir
+                const existingNotification = document.querySelector('.notification');
+                if (existingNotification) {
+                    existingNotification.remove();
+                }
+                
+                const notification = document.createElement('div');
+                notification.className = 'notification fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 max-w-sm';
+                
+                if (type === 'error') {
+                    notification.className += ' bg-red-500 text-white';
+                } else if (type === 'success') {
+                    notification.className += ' bg-green-500 text-white';
+                } else {
+                    notification.className += ' bg-blue-500 text-white';
+                }
+                
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                // Remover após 4 segundos
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 4000);
             }
             
             createCalibrationPoint(x, y, index) {
@@ -911,7 +1065,7 @@
             finishCalibration() {
                 const knownDistance = parseFloat(this.knownDistanceInput.value);
                 if (!knownDistance || knownDistance <= 0) {
-                    alert('Digite uma distância válida em metros!');
+                    this.showNotification('Digite uma distância válida em metros!', 'error');
                     this.cancelCalibration();
                     return;
                 }
@@ -944,7 +1098,7 @@
                 });
                 this.updatePolygonList();
                 
-                alert(`Calibração concluída! 1 metro = ${this.pixelsPerMeter.toFixed(2)} pixels`);
+                this.showNotification(`Calibração concluída! 1 metro = ${this.pixelsPerMeter.toFixed(2)} pixels`, 'success');
             }
             
             cancelCalibration() {
@@ -996,5 +1150,5 @@
         // Inicializar aplicação
         const mapper = new PolygonMapper();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'979eebd2909f6eae',t:'MTc1NzAwMzk0OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'979f0282d54f6eae',t:'MTc1NzAwNDg3Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
