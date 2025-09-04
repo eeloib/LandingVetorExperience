@@ -171,6 +171,9 @@
 
             <!-- Exportar -->
             <div class="space-y-2">
+                <button id="downloadImage" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-gray-300" disabled>
+                    🖼️ Baixar Imagem
+                </button>
                 <button id="exportCSV" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:bg-gray-300" disabled>
                     📊 Exportar CSV
                 </button>
@@ -269,6 +272,7 @@
                 this.zoomInBtn = document.getElementById('zoomIn');
                 this.zoomOutBtn = document.getElementById('zoomOut');
                 this.resetViewBtn = document.getElementById('resetView');
+                this.downloadImageBtn = document.getElementById('downloadImage');
                 this.exportCSVBtn = document.getElementById('exportCSV');
                 this.exportJSONBtn = document.getElementById('exportJSON');
                 
@@ -315,6 +319,7 @@
                 this.resetViewBtn.addEventListener('click', () => this.resetView());
                 
                 // Exportar
+                this.downloadImageBtn.addEventListener('click', () => this.downloadImage());
                 this.exportCSVBtn.addEventListener('click', () => this.exportCSV());
                 this.exportJSONBtn.addEventListener('click', () => this.exportJSON());
                 
@@ -1015,6 +1020,8 @@
             
             updateExportButtons() {
                 const hasData = this.polygons.length > 0;
+                const hasImage = this.image !== null;
+                this.downloadImageBtn.disabled = !(hasImage && hasData);
                 this.exportCSVBtn.disabled = !hasData;
                 this.exportJSONBtn.disabled = !hasData;
             }
@@ -1301,6 +1308,78 @@
                 }
             }
 
+            downloadImage() {
+                if (!this.image || this.polygons.length === 0) return;
+                
+                // Criar canvas para renderizar a imagem com os polígonos
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Definir tamanho do canvas baseado na imagem original
+                canvas.width = this.image.naturalWidth;
+                canvas.height = this.image.naturalHeight;
+                
+                // Desenhar a imagem de fundo
+                ctx.drawImage(this.image, 0, 0);
+                
+                // Desenhar cada polígono
+                this.polygons.forEach(polygon => {
+                    if (polygon.points.length < 3) return;
+                    
+                    // Configurar estilo do polígono
+                    ctx.fillStyle = this.hexToRgba(polygon.color, 0.4);
+                    ctx.strokeStyle = polygon.color;
+                    ctx.lineWidth = 3;
+                    
+                    // Desenhar o polígono
+                    ctx.beginPath();
+                    ctx.moveTo(polygon.points[0].x, polygon.points[0].y);
+                    for (let i = 1; i < polygon.points.length; i++) {
+                        ctx.lineTo(polygon.points[i].x, polygon.points[i].y);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Desenhar o texto do polígono
+                    const center = this.calculatePolygonCenter(polygon.points);
+                    const unit = this.isCalibrated ? 'm²' : 'px²';
+                    
+                    // Configurar texto
+                    ctx.fillStyle = '#333333';
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3;
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    // Desenhar contorno branco do texto (para legibilidade)
+                    ctx.strokeText(polygon.name, center.x, center.y - 10);
+                    ctx.strokeText(`${polygon.area.toFixed(2)} ${unit}`, center.x, center.y + 10);
+                    
+                    // Desenhar o texto
+                    ctx.fillText(polygon.name, center.x, center.y - 10);
+                    
+                    // Texto da área com fonte menor
+                    ctx.font = '14px Arial';
+                    ctx.fillText(`${polygon.area.toFixed(2)} ${unit}`, center.x, center.y + 10);
+                });
+                
+                // Converter canvas para blob e fazer download
+                canvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'imagem_com_poligonos.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    this.showNotification('Imagem baixada com sucesso!', 'success');
+                }, 'image/png', 0.95);
+            }
+
             downloadFile(content, filename, mimeType) {
                 const blob = new Blob([content], { type: mimeType });
                 const url = URL.createObjectURL(blob);
@@ -1317,5 +1396,5 @@
         // Inicializar aplicação
         const mapper = new PolygonMapper();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'979f1f9a20d53b9a',t:'MTc1NzAwNjA2OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'979f2a6a30a36eae',t:'MTc1NzAwNjUxMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
