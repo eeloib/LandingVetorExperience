@@ -169,17 +169,28 @@
                 </div>
             </div>
 
-            <!-- Exportar -->
+            <!-- Importar/Exportar -->
             <div class="space-y-2">
-                <button id="downloadImage" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-gray-300" disabled>
-                    🖼️ Baixar Imagem
-                </button>
-                <button id="exportCSV" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:bg-gray-300" disabled>
-                    📊 Exportar CSV
-                </button>
-                <button id="exportJSON" class="w-full bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:bg-gray-300" disabled>
-                    📋 Exportar JSON
-                </button>
+                <div class="border-t pt-4">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">Importar Dados</h4>
+                    <input type="file" id="csvInput" accept=".csv" class="hidden">
+                    <button id="loadCSV" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-300" disabled>
+                        📂 Carregar CSV
+                    </button>
+                </div>
+                
+                <div class="border-t pt-4">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">Exportar Dados</h4>
+                    <button id="downloadImage" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-gray-300" disabled>
+                        🖼️ Baixar Imagem
+                    </button>
+                    <button id="exportCSV" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:bg-gray-300" disabled>
+                        📊 Exportar CSV
+                    </button>
+                    <button id="exportJSON" class="w-full bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:bg-gray-300" disabled>
+                        📋 Exportar JSON
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -276,6 +287,9 @@
                 this.exportCSVBtn = document.getElementById('exportCSV');
                 this.exportJSONBtn = document.getElementById('exportJSON');
                 
+                this.csvInput = document.getElementById('csvInput');
+                this.loadCSVBtn = document.getElementById('loadCSV');
+                
                 this.polygonColorInput = document.getElementById('polygonColor');
                 this.colorPresets = document.querySelectorAll('.color-preset');
                 
@@ -322,6 +336,10 @@
                 this.downloadImageBtn.addEventListener('click', () => this.downloadImage());
                 this.exportCSVBtn.addEventListener('click', () => this.exportCSV());
                 this.exportJSONBtn.addEventListener('click', () => this.exportJSON());
+                
+                // Importar CSV
+                this.loadCSVBtn.addEventListener('click', () => this.csvInput.click());
+                this.csvInput.addEventListener('change', (e) => this.loadCSV(e.target.files[0]));
                 
                 // Seletor de cor
                 this.polygonColorInput.addEventListener('change', (e) => {
@@ -372,6 +390,186 @@
                     };
                 };
                 reader.readAsDataURL(file);
+            }
+            
+            loadCSV(file) {
+                if (!file || !file.name.endsWith('.csv')) {
+                    this.showNotification('Por favor, selecione um arquivo CSV válido!', 'error');
+                    return;
+                }
+                
+                if (!this.image) {
+                    this.showNotification('Carregue uma imagem primeiro antes de importar os polígonos!', 'error');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        this.parseCSV(e.target.result);
+                    } catch (error) {
+                        this.showNotification('Erro ao ler o arquivo CSV: ' + error.message, 'error');
+                    }
+                };
+                reader.readAsText(file);
+            }
+            
+            parseCSV(csvContent) {
+                const lines = csvContent.trim().split('\n');
+                if (lines.length < 2) {
+                    this.showNotification('Arquivo CSV vazio ou inválido!', 'error');
+                    return;
+                }
+                
+                // Verificar cabeçalho
+                const header = lines[0].toLowerCase();
+                if (!header.includes('nome') || !header.includes('coordenadas') || !header.includes('cor')) {
+                    this.showNotification('Formato CSV inválido! Certifique-se de que o arquivo foi exportado por este sistema.', 'error');
+                    return;
+                }
+                
+                // Limpar polígonos existentes
+                this.clearAllPolygons();
+                
+                let importedCount = 0;
+                let maxId = 0;
+                
+                // Processar cada linha
+                for (let i = 1; i < lines.length; i++) {
+                    try {
+                        const line = lines[i].trim();
+                        if (!line) continue;
+                        
+                        const polygon = this.parseCSVLine(line);
+                        if (polygon) {
+                            // Gerar ID único
+                            polygon.id = Date.now() + i;
+                            maxId = Math.max(maxId, polygon.id);
+                            
+                            this.polygons.push(polygon);
+                            importedCount++;
+                        }
+                    } catch (error) {
+                        console.warn(`Erro na linha ${i + 1}:`, error);
+                    }
+                }
+                
+                if (importedCount > 0) {
+                    // Atualizar contador para novos polígonos
+                    this.polygonCounter = this.polygons.length + 1;
+                    
+                    // Renderizar todos os polígonos
+                    this.renderImportedPolygons();
+                    this.updatePolygonList();
+                    this.updateExportButtons();
+                    
+                    this.showNotification(`${importedCount} polígonos importados com sucesso!`, 'success');
+                } else {
+                    this.showNotification('Nenhum polígono válido encontrado no arquivo CSV!', 'error');
+                }
+            }
+            
+            parseCSVLine(line) {
+                // Parse manual mais robusto para CSV
+                const fields = [];
+                let current = '';
+                let inQuotes = false;
+                
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        fields.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                fields.push(current.trim());
+                
+                if (fields.length < 5) {
+                    throw new Error('Linha com campos insuficientes');
+                }
+                
+                const name = fields[0].replace(/^"|"$/g, ''); // Remove aspas
+                const pointCount = parseInt(fields[1]);
+                const area = parseFloat(fields[2]);
+                const color = fields[3].replace(/^"|"$/g, '');
+                const coordsString = fields[4].replace(/^"|"$/g, '');
+                
+                // Parse das coordenadas
+                const coordMatches = coordsString.match(/\(([^)]+)\)/g);
+                if (!coordMatches || coordMatches.length !== pointCount) {
+                    throw new Error('Coordenadas inválidas');
+                }
+                
+                const points = coordMatches.map(match => {
+                    const coords = match.slice(1, -1).split(',');
+                    return {
+                        x: parseFloat(coords[0]),
+                        y: parseFloat(coords[1])
+                    };
+                });
+                
+                return {
+                    name: name,
+                    points: points,
+                    area: area,
+                    color: color
+                };
+            }
+            
+            clearAllPolygons() {
+                // Limpar array de polígonos
+                this.polygons = [];
+                
+                // Remover todos os paths SVG
+                this.polygonSvg.innerHTML = '';
+                
+                // Remover todos os labels
+                const labels = this.canvasContainer.querySelectorAll('.polygon-label');
+                labels.forEach(label => label.remove());
+                
+                // Atualizar lista
+                this.updatePolygonList();
+                this.updateExportButtons();
+            }
+            
+            renderImportedPolygons() {
+                // Limpar SVG primeiro
+                this.polygonSvg.innerHTML = '';
+                
+                // Remover labels antigos
+                const oldLabels = this.canvasContainer.querySelectorAll('.polygon-label');
+                oldLabels.forEach(label => label.remove());
+                
+                // Renderizar cada polígono
+                this.polygons.forEach(polygon => {
+                    this.renderPolygonPath(polygon);
+                    this.addPolygonLabel(polygon);
+                });
+            }
+            
+            renderPolygonPath(polygon) {
+                if (polygon.points.length < 3) return;
+                
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const pathData = polygon.points.map((point, index) => {
+                    const screenX = point.x * this.scale + this.offsetX;
+                    const screenY = point.y * this.scale + this.offsetY;
+                    return `${index === 0 ? 'M' : 'L'} ${screenX} ${screenY}`;
+                }).join(' ') + ' Z';
+                
+                path.setAttribute('d', pathData);
+                path.style.stroke = polygon.color;
+                path.style.strokeWidth = '3';
+                path.style.fill = this.hexToRgba(polygon.color, 0.4);
+                path.dataset.polygonId = polygon.id;
+                path.style.pointerEvents = 'none';
+                
+                this.polygonSvg.appendChild(path);
             }
             
             protectImage() {
@@ -1024,6 +1222,7 @@
                 this.downloadImageBtn.disabled = !(hasImage && hasData);
                 this.exportCSVBtn.disabled = !hasData;
                 this.exportJSONBtn.disabled = !hasData;
+                this.loadCSVBtn.disabled = !hasImage;
             }
             
             exportCSV() {
@@ -1396,5 +1595,6 @@
         // Inicializar aplicação
         const mapper = new PolygonMapper();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'979f2a6a30a36eae',t:'MTc1NzAwNjUxMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97a602c9d073f1c7',t:'MTc1NzA3ODI4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
