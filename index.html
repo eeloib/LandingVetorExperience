@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Galeria de Fotos por Setores</title>
+    <title>Limpa Rio</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
@@ -584,7 +584,7 @@
 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
 <head>
     <meta charset='UTF-8'>
-    <title>Galeria de Fotos por Setores</title>
+    <title>Limpa Rio</title>
     <!--[if gte mso 9]>
     <xml>
         <w:WordDocument>
@@ -608,7 +608,7 @@
     </style>
 </head>
 <body>
-    <h1>Pagina Limpa Rio - Lote 05 - Arvores Por Frente</h1>
+    <h1>Limpa Rio - Lote 05 - Arvores Por Frente</h1>
     <p><strong>Data de Exportação:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
 `;
 
@@ -826,7 +826,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Pagina Limpa Rio - Lote 05 - Arvores Por Frente</h1>
+            <h1>Limpa Rio - Lote 05 - Arvores Por Frente</h1>
         </div>
         
         <div class="export-info">
@@ -920,7 +920,7 @@
             let pdfContent = `
                 <div style="text-align: center; margin-bottom: 30px;">
                     <h1 style="color: #4facfe; font-size: 24px; margin-bottom: 10px;">
-                        Pagina Limpa Rio - Lote 05 - Arvores Por Frente
+                        Limpa Rio - Lote 05 - Arvores Por Frente
                     </h1>
                     <p style="font-size: 14px; color: #666;">
                         <strong>Data de Exportação:</strong> ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}
@@ -932,39 +932,55 @@
                 </div>
             `;
 
+            let isFirstSector = true;
+
             Object.keys(sectors).forEach(sectorKey => {
                 const sector = sectors[sectorKey];
                 const photos = sector.photos;
                 
-                pdfContent += `
-                    <div style="margin-bottom: 30px; page-break-inside: avoid;">
-                        <h2 style="color: #374151; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-size: 18px;">
-                            ${sector.frente} - ${sector.municipio}
-                        </h2>
-                        <p style="margin: 10px 0; font-size: 14px;">
-                            <strong>🌳 Quantidade de Árvores:</strong> ${sector.quantidadeArvores} | 
-                            <strong>📷 Total de Fotos:</strong> ${photos.length}
-                        </p>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px;">
-                `;
-                
-                photos.forEach((photo, index) => {
+                // Dividir fotos em grupos de 12 por página
+                for (let pageStart = 0; pageStart < photos.length; pageStart += 12) {
+                    // Quebrar página se não for a primeira página do primeiro setor
+                    if (!isFirstSector || pageStart > 0) {
+                        pdfContent += `<div style="page-break-before: always;"></div>`;
+                    }
+                    
+                    const pagePhotos = photos.slice(pageStart, pageStart + 12);
+                    const isFirstPage = pageStart === 0;
+                    
                     pdfContent += `
-                        <div style="text-align: center; page-break-inside: avoid;">
-                            <img src="${photo.src}" alt="Foto ${index + 1}" 
-                                 style="max-width: 120px; max-height: 100px; object-fit: contain; border: 1px solid #ddd; border-radius: 8px; background: #f8fafc;">
-                            <div style="margin-top: 8px; font-size: 10px;">
-                                <strong>${photo.name}</strong>
-                                ${photo.description ? `<br><em style="color: #666;">${photo.description}</em>` : ''}
+                        <div style="margin-bottom: 30px;">
+                            <h2 style="color: #374151; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-size: 18px;">
+                                ${sector.frente} - ${sector.municipio}${!isFirstPage ? ' (continuação)' : ''}
+                            </h2>
+                            ${isFirstPage ? `
+                            <p style="margin: 10px 0; font-size: 14px;">
+                                <strong>🌳 Quantidade de Árvores:</strong> ${sector.quantidadeArvores} | 
+                                <strong>📷 Total de Fotos:</strong> ${photos.length}
+                            </p>` : ''}
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px;">
+                    `;
+                    
+                    pagePhotos.forEach((photo, index) => {
+                        pdfContent += `
+                            <div style="text-align: center; page-break-inside: avoid;">
+                                <img src="${photo.src}" alt="Foto ${pageStart + index + 1}" 
+                                     style="max-width: 120px; max-height: 100px; object-fit: contain; border: 1px solid #ddd; border-radius: 8px; background: #f8fafc;">
+                                <div style="margin-top: 8px; font-size: 10px;">
+                                    <strong>${photo.name}</strong>
+                                    ${photo.description ? `<br><em style="color: #666;">${photo.description}</em>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    pdfContent += `
                             </div>
                         </div>
                     `;
-                });
+                }
                 
-                pdfContent += `
-                        </div>
-                    </div>
-                `;
+                isFirstSector = false;
             });
 
             tempDiv.innerHTML = pdfContent;
@@ -1398,5 +1414,5 @@
             });
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97c7268c950bf1ab',t:'MTc1NzQyNTc4NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97c78694e0c2f1ab',t:'MTc1NzQyOTcxNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
