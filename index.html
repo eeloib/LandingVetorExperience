@@ -623,14 +623,14 @@
         <table class="photos-table">
 `;
                 
-                // Organizar fotos em linhas de 3 colunas
-                for (let i = 0; i < photos.length; i += 3) {
+                // Organizar fotos em linhas de 3 colunas (9 por página)
+                for (let i = 0; i < pagePhotos.length; i += 3) {
                     wordContent += `
             <tr>`;
                     
                     // Adicionar até 3 fotos por linha
-                    for (let j = i; j < Math.min(i + 3, photos.length); j++) {
-                        const photo = photos[j];
+                    for (let j = i; j < Math.min(i + 3, pagePhotos.length); j++) {
+                        const photo = pagePhotos[j];
                         wordContent += `
                 <td>
                     <div class="photo-container">
@@ -912,7 +912,7 @@
             tempDiv.style.position = 'absolute';
             tempDiv.style.left = '-9999px';
             tempDiv.style.top = '0';
-            tempDiv.style.width = '210mm'; // A4 width
+            tempDiv.style.width = '190mm'; // A4 width com margens
             tempDiv.style.background = 'white';
             tempDiv.style.fontFamily = 'Arial, sans-serif';
             tempDiv.style.padding = '20px';
@@ -938,14 +938,14 @@
                 const sector = sectors[sectorKey];
                 const photos = sector.photos;
                 
-                // Dividir fotos em grupos de 12 por página
-                for (let pageStart = 0; pageStart < photos.length; pageStart += 12) {
+                // Dividir fotos em grupos de 9 por página (3x3)
+                for (let pageStart = 0; pageStart < photos.length; pageStart += 9) {
                     // Quebrar página se não for a primeira página do primeiro setor
                     if (!isFirstSector || pageStart > 0) {
                         pdfContent += `<div style="page-break-before: always;"></div>`;
                     }
                     
-                    const pagePhotos = photos.slice(pageStart, pageStart + 12);
+                    const pagePhotos = photos.slice(pageStart, pageStart + 9);
                     const isFirstPage = pageStart === 0;
                     
                     pdfContent += `
@@ -958,17 +958,17 @@
                                 <strong>🌳 Quantidade de Árvores:</strong> ${sector.quantidadeArvores} | 
                                 <strong>📷 Total de Fotos:</strong> ${photos.length}
                             </p>` : ''}
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px;">
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; max-width: 100%;">
                     `;
                     
                     pagePhotos.forEach((photo, index) => {
                         pdfContent += `
-                            <div style="text-align: center; page-break-inside: avoid;">
+                            <div style="text-align: center; page-break-inside: avoid; padding: 5px;">
                                 <img src="${photo.src}" alt="Foto ${pageStart + index + 1}" 
-                                     style="max-width: 140px; max-height: 120px; object-fit: contain; border: 1px solid #ddd; border-radius: 8px; background: #f8fafc;">
-                                <div style="margin-top: 8px; font-size: 10px;">
-                                    <strong>${photo.name}</strong>
-                                    ${photo.description ? `<br><em style="color: #666;">${photo.description}</em>` : ''}
+                                     style="width: 100%; max-width: 120px; height: 90px; object-fit: contain; border: 1px solid #ddd; border-radius: 6px; background: #f8fafc; display: block; margin: 0 auto;">
+                                <div style="margin-top: 6px; font-size: 9px; line-height: 1.2; max-width: 120px; margin-left: auto; margin-right: auto;">
+                                    <strong style="display: block; margin-bottom: 2px;">${photo.name.length > 15 ? photo.name.substring(0, 15) + '...' : photo.name}</strong>
+                                    ${photo.description ? `<em style="color: #666; display: block;">${photo.description.length > 30 ? photo.description.substring(0, 30) + '...' : photo.description}</em>` : ''}
                                 </div>
                             </div>
                         `;
@@ -988,29 +988,31 @@
 
             // Usar html2canvas para capturar o conteúdo
             html2canvas(tempDiv, {
-                scale: 2,
+                scale: 1.5,
                 useCORS: true,
                 allowTaint: true,
-                backgroundColor: '#ffffff'
+                backgroundColor: '#ffffff',
+                width: tempDiv.scrollWidth,
+                height: tempDiv.scrollHeight
             }).then(canvas => {
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 
-                const imgWidth = 210; // A4 width in mm
-                const pageHeight = 295; // A4 height in mm
+                const imgWidth = 190; // A4 width com margens
+                const pageHeight = 277; // A4 height com margens
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
                 let heightLeft = imgHeight;
-                let position = 0;
+                let position = 10; // Margem superior
 
                 // Adicionar primeira página
-                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, position, imgWidth, imgHeight);
                 heightLeft -= pageHeight;
 
                 // Adicionar páginas adicionais se necessário
                 while (heightLeft >= 0) {
-                    position = heightLeft - imgHeight;
+                    position = heightLeft - imgHeight + 10;
                     pdf.addPage();
-                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, position, imgWidth, imgHeight);
                     heightLeft -= pageHeight;
                 }
 
@@ -1414,5 +1416,5 @@
             });
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97c7929512bdf1ab',t:'MTc1NzQzMDIwOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97c79f9c1522f1ab',t:'MTc1NzQzMDc0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
