@@ -543,15 +543,15 @@
         h1 { color: #4facfe; text-align: center; margin-bottom: 30px; }
         h2 { color: #374151; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 30px; }
         .sector { margin-bottom: 40px; page-break-inside: avoid; }
-        .photos { margin-top: 20px; display: table; width: 100%; }
-        .photo-row { display: table-row; }
-        .photo { display: table-cell; text-align: center; padding: 10px; vertical-align: top; width: 33.33%; }
-        .photo img { max-width: 180px; max-height: 180px; border: 1px solid #ddd; display: block; margin: 0 auto; }
-        .photo-info { margin-top: 8px; font-size: 11px; color: #666; word-wrap: break-word; }
+        .photos-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .photos-table td { width: 33.33%; text-align: center; padding: 15px; vertical-align: top; }
+        .photo-container { display: inline-block; }
+        .photo-container img { width: 200px; height: 200px; object-fit: cover; border: 2px solid #ddd; display: block; }
+        .photo-description { margin-top: 8px; font-size: 11px; color: #666; word-wrap: break-word; max-width: 200px; }
     </style>
 </head>
 <body>
-    <h1>Galeria de Fotos por Setores</h1>
+    <h1>Pagina Limpa Rio - Lote 05 - Arvores Por Frente</h1>
     <p><strong>Data de Exportação:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
 `;
 
@@ -563,38 +563,37 @@
         <h2>${sector.frente} - ${sector.municipio}</h2>
         <p><strong>Quantidade de Árvores:</strong> ${sector.quantidadeArvores}</p>
         <p><strong>Total de Fotos:</strong> ${photos.length}</p>
-        <div class="photos">
+        <table class="photos-table">
 `;
                 
                 // Organizar fotos em linhas de 3 colunas
                 for (let i = 0; i < photos.length; i += 3) {
                     wordContent += `
-            <div class="photo-row">`;
+            <tr>`;
                     
                     // Adicionar até 3 fotos por linha
                     for (let j = i; j < Math.min(i + 3, photos.length); j++) {
                         const photo = photos[j];
                         wordContent += `
-                <div class="photo">
-                    <img src="${photo.src}" alt="${photo.name}">
-                    <div class="photo-info">
-                        <strong>${photo.name}</strong>
-                        ${photo.description ? `<br><em>${photo.description}</em>` : ''}
+                <td>
+                    <div class="photo-container">
+                        <img src="${photo.src}" alt="Foto ${j + 1}">
+                        ${photo.description ? `<div class="photo-description"><em>${photo.description}</em></div>` : ''}
                     </div>
-                </div>`;
+                </td>`;
                     }
                     
                     // Preencher células vazias se necessário
                     const remainingCells = 3 - (Math.min(i + 3, photos.length) - i);
                     for (let k = 0; k < remainingCells; k++) {
-                        wordContent += `<div class="photo"></div>`;
+                        wordContent += `<td></td>`;
                     }
                     
                     wordContent += `
-            </div>`;
+            </tr>`;
                 }
                 
-                wordContent += `        </div>
+                wordContent += `        </table>
     </div>`;
             });
 
@@ -931,5 +930,5 @@
             });
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97c6de525211f1ab',t:'MTc1NzQyMjgyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97c6eb02f2f2da2e',t:'MTc1NzQyMzM0NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
