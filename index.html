@@ -205,10 +205,26 @@
             padding: 15px;
         }
 
-        .photo-name {
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 5px;
+        .photo-description {
+            width: 100%;
+            min-height: 60px;
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        .photo-description:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.1);
+        }
+
+        .photo-description::placeholder {
+            color: #9ca3af;
         }
 
 
@@ -278,8 +294,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📸 Galeria de Fotos por Setores</h1>
-            <p>Organize suas fotos por setores e exporte facilmente</p>
+            <h1>Pagina Limpa Rio - Lote 05 - Arvores Por Frente</h1>
         </div>
 
         <div class="controls">
@@ -419,7 +434,11 @@
                                 </button>
                                 <img src="${photo.src}" alt="${photo.name}" loading="lazy">
                                 <div class="photo-info">
-                                    <div class="photo-name">${photo.name}</div>
+                                    <textarea 
+                                        class="photo-description" 
+                                        placeholder="Adicione uma descrição..."
+                                        onchange="updatePhotoDescription('${sectorKey}', ${photo.id}, this.value)"
+                                    >${photo.description || ''}</textarea>
                                 </div>
                             </div>
                         `;
@@ -445,6 +464,13 @@
                 }
                 
                 renderGallery();
+            }
+        }
+
+        function updatePhotoDescription(sectorKey, photoId, description) {
+            const photo = sectors[sectorKey].photos.find(p => p.id === photoId);
+            if (photo) {
+                photo.description = description;
             }
         }
 
@@ -511,6 +537,7 @@
                     <img src="${photo.src}" alt="${photo.name}">
                     <div class="photo-info">
                         <strong>${photo.name}</strong>
+                        ${photo.description ? `<br><em>${photo.description}</em>` : ''}
                     </div>
                 </div>`;
                     }
@@ -555,14 +582,15 @@
 
             // Adicionar BOM para UTF-8
             let csvContent = '\uFEFF';
-            csvContent += 'Frente,Município,Quantidade de Árvores,Nome da Foto,Tamanho Estimado\n';
+            csvContent += 'Frente,Município,Quantidade de Árvores,Nome da Foto,Descrição,Tamanho Estimado\n';
             
             Object.keys(sectors).forEach(sectorKey => {
                 const sector = sectors[sectorKey];
                 sector.photos.forEach(photo => {
                     // Estimar tamanho do arquivo baseado no base64
                     const sizeKB = Math.round((photo.src.length * 0.75) / 1024);
-                    csvContent += `"${sector.frente}","${sector.municipio}","${sector.quantidadeArvores}","${photo.name}","${sizeKB} KB"\n`;
+                    const description = photo.description ? photo.description.replace(/"/g, '""') : '';
+                    csvContent += `"${sector.frente}","${sector.municipio}","${sector.quantidadeArvores}","${photo.name}","${description}","${sizeKB} KB"\n`;
                 });
             });
 
@@ -657,5 +685,5 @@
             });
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97c6c497f721f1ab',t:'MTc1NzQyMTc3MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97c6d9444023f1ab',t:'MTc1NzQyMjYxOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
