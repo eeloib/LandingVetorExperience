@@ -394,6 +394,12 @@
                 <button class="btn btn-success" onclick="exportToWord()">
                     📄 Exportar para Word
                 </button>
+                <button class="btn btn-primary" onclick="exportToHTML()">
+                    🌐 Exportar para HTML
+                </button>
+                <button class="btn btn-warning" onclick="exportToPDF()">
+                    📋 Exportar para PDF
+                </button>
                 <button class="btn btn-warning" onclick="exportToCSV()">
                     📊 Exportar Dados para CSV
                 </button>
@@ -663,6 +669,343 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        }
+
+        function exportToHTML() {
+            if (Object.keys(sectors).length === 0) {
+                alert('Adicione algumas fotos antes de exportar!');
+                return;
+            }
+
+            // Criar conteúdo HTML completo
+            let htmlContent = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galeria de Fotos por Setores - Relatório</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .export-info {
+            background: #f8fafc;
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        
+        .gallery {
+            padding: 30px;
+        }
+        
+        .sector {
+            margin-bottom: 40px;
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .sector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .sector-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .photo-count {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .photo-item {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .photo-item img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .photo-info {
+            padding: 15px;
+        }
+        
+        .photo-description {
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+        
+        .summary {
+            background: #f0f9ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary h3 {
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; }
+            .sector { page-break-inside: avoid; }
+        }
+        
+        @media (max-width: 768px) {
+            .photos-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Pagina Limpa Rio - Lote 05 - Arvores Por Frente</h1>
+        </div>
+        
+        <div class="export-info">
+            <p><strong>📅 Data de Exportação:</strong> ${new Date().toLocaleDateString('pt-BR', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            })}</p>
+            <p><strong>⏰ Horário:</strong> ${new Date().toLocaleTimeString('pt-BR')}</p>
+        </div>
+        
+        <div class="gallery">
+            <div class="summary">
+                <h3>📊 Resumo Geral</h3>
+                <p><strong>Total de Setores:</strong> ${Object.keys(sectors).length}</p>
+                <p><strong>Total de Fotos:</strong> ${Object.values(sectors).reduce((total, sector) => total + sector.photos.length, 0)}</p>
+            </div>
+`;
+
+            Object.keys(sectors).forEach(sectorKey => {
+                const sector = sectors[sectorKey];
+                const photos = sector.photos;
+                
+                htmlContent += `
+            <div class="sector">
+                <div class="sector-header">
+                    <div>
+                        <h2 class="sector-title">${sector.frente} - ${sector.municipio}</h2>
+                        <p style="color: #6b7280; margin-top: 5px; font-size: 0.9rem;">🌳 ${sector.quantidadeArvores} árvores</p>
+                    </div>
+                    <span class="photo-count">${photos.length} foto${photos.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div class="photos-grid">
+`;
+                
+                photos.forEach((photo, index) => {
+                    htmlContent += `
+                    <div class="photo-item">
+                        <img src="${photo.src}" alt="Foto ${index + 1} - ${photo.name}" loading="lazy">
+                        <div class="photo-info">
+                            <strong>📷 ${photo.name}</strong>
+                            ${photo.description ? `<div class="photo-description">${photo.description}</div>` : ''}
+                        </div>
+                    </div>
+`;
+                });
+                
+                htmlContent += `
+                </div>
+            </div>
+`;
+            });
+
+            htmlContent += `
+        </div>
+    </div>
+</body>
+</html>`;
+
+            // Criar e baixar arquivo
+            const blob = new Blob([htmlContent], { 
+                type: 'text/html;charset=utf-8' 
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `galeria-fotos-${new Date().toISOString().split('T')[0]}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function exportToPDF() {
+            if (Object.keys(sectors).length === 0) {
+                alert('Adicione algumas fotos antes de exportar!');
+                return;
+            }
+
+            // Criar elemento temporário para captura
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            tempDiv.style.top = '0';
+            tempDiv.style.width = '210mm'; // A4 width
+            tempDiv.style.background = 'white';
+            tempDiv.style.fontFamily = 'Arial, sans-serif';
+            tempDiv.style.padding = '20px';
+
+            let pdfContent = `
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="color: #4facfe; font-size: 24px; margin-bottom: 10px;">
+                        Pagina Limpa Rio - Lote 05 - Arvores Por Frente
+                    </h1>
+                    <p style="font-size: 14px; color: #666;">
+                        <strong>Data de Exportação:</strong> ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}
+                    </p>
+                    <p style="font-size: 14px; color: #666; margin-top: 10px;">
+                        <strong>Total de Setores:</strong> ${Object.keys(sectors).length} | 
+                        <strong>Total de Fotos:</strong> ${Object.values(sectors).reduce((total, sector) => total + sector.photos.length, 0)}
+                    </p>
+                </div>
+            `;
+
+            Object.keys(sectors).forEach(sectorKey => {
+                const sector = sectors[sectorKey];
+                const photos = sector.photos;
+                
+                pdfContent += `
+                    <div style="margin-bottom: 30px; page-break-inside: avoid;">
+                        <h2 style="color: #374151; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-size: 18px;">
+                            ${sector.frente} - ${sector.municipio}
+                        </h2>
+                        <p style="margin: 10px 0; font-size: 14px;">
+                            <strong>🌳 Quantidade de Árvores:</strong> ${sector.quantidadeArvores} | 
+                            <strong>📷 Total de Fotos:</strong> ${photos.length}
+                        </p>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px;">
+                `;
+                
+                photos.forEach((photo, index) => {
+                    pdfContent += `
+                        <div style="text-align: center; page-break-inside: avoid;">
+                            <img src="${photo.src}" alt="Foto ${index + 1}" 
+                                 style="width: 120px; height: 120px; object-fit: cover; border: 1px solid #ddd; border-radius: 8px;">
+                            <div style="margin-top: 8px; font-size: 10px;">
+                                <strong>${photo.name}</strong>
+                                ${photo.description ? `<br><em style="color: #666;">${photo.description}</em>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                pdfContent += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            tempDiv.innerHTML = pdfContent;
+            document.body.appendChild(tempDiv);
+
+            // Usar html2canvas para capturar o conteúdo
+            html2canvas(tempDiv, {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff'
+            }).then(canvas => {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                
+                const imgWidth = 210; // A4 width in mm
+                const pageHeight = 295; // A4 height in mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                // Adicionar primeira página
+                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                // Adicionar páginas adicionais se necessário
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                // Salvar PDF
+                pdf.save(`galeria-fotos-${new Date().toISOString().split('T')[0]}.pdf`);
+                
+                // Remover elemento temporário
+                document.body.removeChild(tempDiv);
+            }).catch(error => {
+                console.error('Erro ao gerar PDF:', error);
+                alert('Erro ao gerar PDF. Tente novamente.');
+                document.body.removeChild(tempDiv);
+            });
         }
 
         function exportToCSV() {
@@ -1053,5 +1396,5 @@
             });
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97c6fe8dc345da2e',t:'MTc1NzQyNDE0NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97c70a54e247f1ab',t:'MTc1NzQyNDYyOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
