@@ -6,7 +6,7 @@
     <title>Sistema Limpa Rio Comunidade</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
         body {
@@ -583,9 +583,7 @@
                         <button type="button" onclick="exportarFrenteAtual()" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium transition-all">
                             📊 Exportar CSV
                         </button>
-                        <button type="button" onclick="gerarWordFrenteAtual()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-all">
-                            📄 Gerar Word
-                        </button>
+
                         <button type="button" onclick="limparFormulario()" class="bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-lg font-medium transition-all">
                             🗑️ Limpar Formulário
                         </button>
@@ -1155,215 +1153,7 @@
             }
         }
         
-        function gerarWordFrente(frente, formData) {
-            try {
-                // Mostrar indicador de processamento
-                const processingDiv = document.createElement('div');
-                processingDiv.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-                processingDiv.innerHTML = '⏳ Gerando documento Word...';
-                document.body.appendChild(processingDiv);
 
-                // Criar documento Word usando docx
-                const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } = docx;
-                
-                // Preparar elementos do documento
-                const docElements = [];
-                
-                // Cabeçalho
-                docElements.push(
-                    new Paragraph({
-                        children: [
-                            new TextRun({
-                                text: "SISTEMA LIMPA RIO COMUNIDADE",
-                                bold: true,
-                                size: 32
-                            })
-                        ],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 200 }
-                    }),
-                    new Paragraph({
-                        children: [
-                            new TextRun({
-                                text: "Relatório de Frente de Trabalho",
-                                bold: true,
-                                size: 24
-                            })
-                        ],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { after: 400 }
-                    })
-                );
-
-                // Dados Básicos
-                docElements.push(
-                    new Paragraph({
-                        children: [
-                            new TextRun({
-                                text: "DADOS BÁSICOS",
-                                bold: true,
-                                size: 20
-                            })
-                        ],
-                        spacing: { before: 200, after: 200 }
-                    })
-                );
-
-                const dadosBasicos = [
-                    [`Código da Frente:`, frente.codigo],
-                    [`Corpo Hídrico:`, frente.corpoHidrico],
-                    [`Município:`, frente.municipio],
-                    [`Bairro:`, frente.bairro],
-                    [`Data da Visita:`, new Date(frente.dataVisita).toLocaleDateString('pt-BR')],
-                    [`Técnica Social:`, frente.tecnicaSocial]
-                ];
-
-                dadosBasicos.forEach(([label, value]) => {
-                    docElements.push(
-                        new Paragraph({
-                            children: [
-                                new TextRun({ text: label, bold: true }),
-                                new TextRun({ text: ` ${value}` })
-                            ],
-                            spacing: { after: 100 }
-                        })
-                    );
-                });
-
-                // Equipamentos básicos
-                docElements.push(
-                    new Paragraph({
-                        children: [
-                            new TextRun({
-                                text: "EQUIPAMENTOS IDENTIFICADOS",
-                                bold: true,
-                                size: 20
-                            })
-                        ],
-                        spacing: { before: 400, after: 200 }
-                    })
-                );
-
-                // Coletar equipamentos simples
-                const escolas = document.querySelectorAll('input[name="escola_nome[]"]');
-                let totalEquipamentos = 0;
-                
-                escolas.forEach((input) => {
-                    if (input.value.trim()) {
-                        docElements.push(
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: `Escola: ${input.value}` })
-                                ],
-                                spacing: { after: 100 }
-                            })
-                        );
-                        totalEquipamentos++;
-                    }
-                });
-                
-                const saude = document.querySelectorAll('input[name="saude_nome[]"]');
-                saude.forEach((input) => {
-                    if (input.value.trim()) {
-                        docElements.push(
-                            new Paragraph({
-                                children: [
-                                    new TextRun({ text: `Unidade de Saúde: ${input.value}` })
-                                ],
-                                spacing: { after: 100 }
-                            })
-                        );
-                        totalEquipamentos++;
-                    }
-                });
-
-                if (totalEquipamentos === 0) {
-                    docElements.push(
-                        new Paragraph({
-                            children: [
-                                new TextRun({ text: "Nenhum equipamento cadastrado" })
-                            ],
-                            spacing: { after: 100 }
-                        })
-                    );
-                }
-
-                // Fotos
-                docElements.push(
-                    new Paragraph({
-                        children: [
-                            new TextRun({
-                                text: "FOTOS",
-                                bold: true,
-                                size: 20
-                            })
-                        ],
-                        spacing: { before: 400, after: 200 }
-                    }),
-                    new Paragraph({
-                        children: [
-                            new TextRun({ text: `Total de fotos anexadas: ${uploadedPhotos.length}` })
-                        ],
-                        spacing: { after: 100 }
-                    })
-                );
-
-                // Rodapé
-                docElements.push(
-                    new Paragraph({
-                        children: [
-                            new TextRun({
-                                text: `Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`,
-                                size: 16
-                            })
-                        ],
-                        alignment: AlignmentType.CENTER,
-                        spacing: { before: 600, after: 100 }
-                    })
-                );
-
-                // Criar documento
-                const doc = new Document({
-                    sections: [{
-                        properties: {},
-                        children: docElements
-                    }]
-                });
-
-                // Gerar e baixar
-                Packer.toBuffer(doc).then(buffer => {
-                    const blob = new Blob([buffer], { 
-                        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
-                    });
-                    
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    a.download = `Frente_${frente.codigo}.docx`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-
-                    // Atualizar mensagem de sucesso
-                    processingDiv.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-                    processingDiv.innerHTML = '✅ Documento Word gerado com sucesso!';
-                    
-                    setTimeout(() => {
-                        processingDiv.remove();
-                    }, 4000);
-                });
-                
-            } catch (error) {
-                console.error('Erro ao gerar documento Word:', error);
-                alert('Erro ao gerar documento Word. Tente novamente.');
-                
-                // Remover indicador em caso de erro
-                const processingDiv = document.querySelector('.fixed.top-4.right-4');
-                if (processingDiv) processingDiv.remove();
-            }
-        }
 
         // Função auxiliar simplificada para coletar dados dos equipamentos
         function coletarDadosEquipamentos(formData) {
@@ -1468,22 +1258,17 @@
                 // Mostrar mensagem de processamento
                 const processingDiv = document.createElement('div');
                 processingDiv.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-                processingDiv.innerHTML = '⏳ Salvando frente e gerando documentos...';
+                processingDiv.innerHTML = '⏳ Salvando frente e gerando PDF...';
                 document.body.appendChild(processingDiv);
                 
-                // Gerar documentos após um pequeno delay para mostrar a mensagem
+                // Gerar PDF após um pequeno delay para mostrar a mensagem
                 setTimeout(() => {
                     // Gerar PDF
                     gerarPDFFrente(novaFrente, formData);
                     
-                    // Gerar Word (com delay para não conflitar)
-                    setTimeout(() => {
-                        gerarWordFrente(novaFrente, formData);
-                    }, 1000);
-                    
                     // Atualizar mensagem de sucesso
                     processingDiv.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-                    processingDiv.innerHTML = '✅ Frente salva! PDF e Word gerados automaticamente!';
+                    processingDiv.innerHTML = '✅ Frente salva! PDF gerado automaticamente!';
                     
                     setTimeout(() => {
                         processingDiv.remove();
@@ -2045,47 +1830,7 @@
             }
         }
 
-        function gerarWordFrenteAtual() {
-            const form = document.getElementById('frenteForm');
-            const formData = new FormData(form);
-            
-            // Verificar se há dados no formulário
-            if (!formData.get('codigo') && !formData.get('corpoHidrico')) {
-                alert('⚠️ Preencha pelo menos o código e corpo hídrico para gerar o documento.');
-                return;
-            }
-            
-            try {
-                // Criar objeto frente temporário com dados do formulário
-                const frenteTemp = {
-                    codigo: formData.get('codigo') || 'Nova Frente',
-                    corpoHidrico: formData.get('corpoHidrico') || 'Não informado',
-                    municipio: formData.get('municipio') || 'Não informado',
-                    bairro: formData.get('bairro') || 'Não informado',
-                    dataVisita: formData.get('dataVisita') || new Date().toISOString().split('T')[0],
-                    tecnicaSocial: formData.get('tecnicaSocial') || 'Não informado',
-                    comunidadeEntorno: formData.get('comunidadeEntorno') || 'nao',
-                    nomeComunidade: formData.get('nomeComunidade') || ''
-                };
-                
-                // Gerar documento
-                gerarWordFrente(frenteTemp, formData);
-                
-                // Mostrar mensagem de sucesso
-                const successDiv = document.createElement('div');
-                successDiv.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-                successDiv.innerHTML = '✅ Documento gerado com sucesso!';
-                document.body.appendChild(successDiv);
-                
-                setTimeout(() => {
-                    successDiv.remove();
-                }, 3000);
-                
-            } catch (error) {
-                console.error('Erro ao gerar documento:', error);
-                alert('Erro ao gerar documento. Verifique os dados e tente novamente.');
-            }
-        }
+
 
         function logout() {
             if (confirm('Tem certeza que deseja sair do sistema?')) {
@@ -2099,6 +1844,7 @@
             atualizarDashboard();
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98e9939924c3f1c9',t:'MTc2MDQ3MTEyMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98e99f85b36cf1c9',t:'MTc2MDQ3MTYwOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
 
