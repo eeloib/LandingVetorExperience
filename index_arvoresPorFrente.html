@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpa Rio</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .form-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+
+        .input-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus, input[type="file"]:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(17, 153, 142, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(240, 147, 251, 0.3);
+        }
+
+        .export-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .gallery {
+            padding: 30px;
+        }
+
+        .sector {
+            margin-bottom: 40px;
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .sector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .sector-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .photo-count {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .photo-item {
+            position: relative;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: grab;
+        }
+
+        .photo-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+
+        .photo-item.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg) scale(0.95);
+            cursor: grabbing;
+            z-index: 1000;
+        }
+
+        .photo-item.drag-over {
+            border: 3px dashed #4facfe;
+            background: #f0f9ff;
+        }
+
+        .drag-handle {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(79, 172, 254, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: grab;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .drag-handle:hover {
+            background: rgba(79, 172, 254, 1);
+            transform: scale(1.1);
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .photo-item img {
+            width: 100%;
+            max-height: 250px;
+            object-fit: contain;
+            background: #f8fafc;
+        }
+
+        .photo-info {
+            padding: 15px;
+        }
+
+        .photo-description {
+            width: 100%;
+            min-height: 60px;
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        .photo-description:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.1);
+        }
+
+        .photo-description::placeholder {
+            color: #9ca3af;
+        }
+
+        .placeholder-item {
+            border: 2px dashed #d1d5db !important;
+            background: #f9fafb !important;
+        }
+
+        .placeholder-overlay {
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .placeholder-overlay:hover {
+            opacity: 0.8;
+        }
+
+        .placeholder-text {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+
+
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background: rgba(239, 68, 68, 1);
+            transform: scale(1.1);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 768px) {
+            .form-group {
+                flex-direction: column;
+            }
+
+            .input-group {
+                min-width: 100%;
+            }
+
+            .export-controls {
+                flex-direction: column;
+            }
+
+            .photos-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Limpa Rio - Lote 05 - Arvores Por Frente</h1>
+        </div>
+
+        <div class="controls">
+            <div class="form-group">
+                <div class="input-group">
+                    <label for="frente">Frente:</label>
+                    <input type="text" id="frente" placeholder="Ex: Frente A, Frente Norte...">
+                </div>
+                <div class="input-group">
+                    <label for="municipio">Município:</label>
+                    <input type="text" id="municipio" placeholder="Ex: São Paulo, Rio de Janeiro...">
+                </div>
+                <div class="input-group">
+                    <label for="quantidadeArvores">Quantidade de Árvores:</label>
+                    <input type="text" id="quantidadeArvores" placeholder="Ex: 15, 30-50, Muitas...">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="input-group">
+                    <label for="photoUpload">Selecionar Fotos:</label>
+                    <input type="file" id="photoUpload" multiple accept="image/*">
+                </div>
+                <button class="btn btn-primary" onclick="addPhotos()">
+                    ➕ Adicionar Fotos
+                </button>
+            </div>
+
+            <div class="export-controls">
+                <button class="btn btn-success" onclick="exportToWord()">
+                    📄 Exportar para Word
+                </button>
+                <button class="btn btn-primary" onclick="exportToHTML()">
+                    🌐 Exportar para HTML
+                </button>
+                <button class="btn btn-warning" onclick="exportToPDF()">
+                    📋 Exportar para PDF
+                </button>
+                <button class="btn btn-warning" onclick="exportToCSV()">
+                    📊 Exportar Dados para CSV
+                </button>
+                <div style="position: relative; display: inline-block;">
+                    <input type="file" id="csvImport" accept=".csv" style="display: none;" onchange="importFromCSV(this)">
+                    <button class="btn btn-primary" onclick="document.getElementById('csvImport').click()">
+                        📥 Importar CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="gallery" id="gallery">
+            <div class="empty-state">
+                <h3>🖼️ Nenhuma foto adicionada ainda</h3>
+                <p>Comece adicionando fotos organizadas por setores!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sectors = {};
+        let photoCounter = 0;
+
+        function addPhotos() {
+            const frente = document.getElementById('frente').value.trim();
+            const municipio = document.getElementById('municipio').value.trim();
+            const quantidadeArvores = document.getElementById('quantidadeArvores').value.trim();
+            const fileInput = document.getElementById('photoUpload');
+            const files = fileInput.files;
+
+            if (!frente || !municipio || !quantidadeArvores) {
+                alert('Por favor, preencha todos os campos (Frente, Município e Quantidade de Árvores)!');
+                return;
+            }
+
+            if (files.length === 0) {
+                alert('Por favor, selecione pelo menos uma foto!');
+                return;
+            }
+
+            const sectorKey = `${frente} - ${municipio}`;
+            
+            if (!sectors[sectorKey]) {
+                sectors[sectorKey] = {
+                    frente: frente,
+                    municipio: municipio,
+                    quantidadeArvores: quantidadeArvores,
+                    photos: []
+                };
+            }
+
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const photo = {
+                            id: ++photoCounter,
+                            name: file.name,
+                            src: e.target.result,
+                            sector: sectorKey
+                        };
+                        sectors[sectorKey].photos.push(photo);
+                        renderGallery();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Limpar campos
+            document.getElementById('frente').value = '';
+            document.getElementById('municipio').value = '';
+            document.getElementById('quantidadeArvores').value = '';
+            fileInput.value = '';
+        }
+
+        function renderGallery() {
+            const gallery = document.getElementById('gallery');
+            
+            if (Object.keys(sectors).length === 0) {
+                gallery.innerHTML = `
+                    <div class="empty-state">
+                        <h3>🖼️ Nenhuma foto adicionada ainda</h3>
+                        <p>Comece adicionando fotos organizadas por setores!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            Object.keys(sectors).forEach(sectorKey => {
+                const sector = sectors[sectorKey];
+                const photos = sector.photos;
+                if (photos.length > 0) {
+                    html += `
+                        <div class="sector">
+                            <div class="sector-header">
+                                <div>
+                                    <h2 class="sector-title">${sector.frente} - ${sector.municipio}</h2>
+                                    <p style="color: #6b7280; margin-top: 5px; font-size: 0.9rem;">🌳 ${sector.quantidadeArvores} árvores</p>
+                                </div>
+                                <span class="photo-count">${photos.length} foto${photos.length !== 1 ? 's' : ''}</span>
+                            </div>
+                            <div class="photos-grid">
+                    `;
+                    
+                    photos.forEach(photo => {
+                        const isPlaceholder = photo.isPlaceholder;
+                        html += `
+                            <div class="photo-item ${isPlaceholder ? 'placeholder-item' : ''}" 
+                                 draggable="true" 
+                                 data-sector="${sectorKey}" 
+                                 data-photo-id="${photo.id}"
+                                 ondragstart="handleDragStart(event)"
+                                 ondragover="handleDragOver(event)"
+                                 ondrop="handleDrop(event)"
+                                 ondragend="handleDragEnd(event)">
+                                <button class="drag-handle" title="Arrastar para reordenar">
+                                    ⋮⋮
+                                </button>
+                                <button class="delete-btn" onclick="deletePhoto('${sectorKey}', ${photo.id})" title="Excluir foto">
+                                    ✕
+                                </button>
+                                ${isPlaceholder ? `
+                                    <div class="placeholder-overlay" onclick="replacePlaceholder('${sectorKey}', ${photo.id})">
+                                        <img src="${photo.src}" alt="${photo.name}" loading="lazy">
+                                        <div class="placeholder-text">Clique para adicionar imagem real</div>
+                                    </div>
+                                ` : `
+                                    <img src="${photo.src}" alt="${photo.name}" loading="lazy">
+                                `}
+                                <div class="photo-info">
+                                    <textarea 
+                                        class="photo-description" 
+                                        placeholder="Adicione uma descrição..."
+                                        onchange="updatePhotoDescription('${sectorKey}', ${photo.id}, this.value)"
+                                    >${photo.description || ''}</textarea>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            gallery.innerHTML = html;
+        }
+
+        function deletePhoto(sectorKey, photoId) {
+            if (confirm('Tem certeza que deseja excluir esta foto?')) {
+                sectors[sectorKey].photos = sectors[sectorKey].photos.filter(photo => photo.id !== photoId);
+                
+                // Remove setor se não tiver mais fotos
+                if (sectors[sectorKey].photos.length === 0) {
+                    delete sectors[sectorKey];
+                }
+                
+                renderGallery();
+            }
+        }
+
+        function updatePhotoDescription(sectorKey, photoId, description) {
+            const photo = sectors[sectorKey].photos.find(p => p.id === photoId);
+            if (photo) {
+                photo.description = description;
+            }
+        }
+
+        function exportToWord() {
+            if (Object.keys(sectors).length === 0) {
+                alert('Adicione algumas fotos antes de exportar!');
+                return;
+            }
+
+            // Criar conteúdo HTML para o Word
+            let wordContent = `<!DOCTYPE html>
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+    <meta charset='UTF-8'>
+    <title>Limpa Rio</title>
+    <!--[if gte mso 9]>
+    <xml>
+        <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>90</w:Zoom>
+            <w:DoNotPromptForConvert/>
+            <w:DoNotShowInsertionsAndDeletions/>
+        </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+        @page { 
+            size: A4; 
+            margin: 2cm; 
+        }
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 0;
+            font-size: 12px;
+        }
+        h1 { 
+            color: #4facfe; 
+            text-align: center; 
+            margin-bottom: 20px; 
+            font-size: 18px;
+            page-break-after: avoid;
+        }
+        h2 { 
+            color: #374151; 
+            border-bottom: 1px solid #ccc; 
+            padding-bottom: 5px; 
+            margin-top: 15px; 
+            font-size: 14px;
+            page-break-after: avoid;
+        }
+        .page-break { 
+            page-break-before: always; 
+        }
+        .sector-info {
+            margin-bottom: 15px;
+            font-size: 11px;
+        }
+        .photos-grid { 
+            display: table;
+            width: 100%; 
+            table-layout: fixed;
+            border-collapse: collapse;
+        }
+        .photos-row {
+            display: table-row;
+        }
+        .photo-cell { 
+            display: table-cell;
+            width: 33.33%; 
+            text-align: center; 
+            padding: 8px; 
+            vertical-align: top;
+            border: 1px solid #eee;
+        }
+        .photo-container img { 
+            max-width: 140px; 
+            max-height: 105px; 
+            object-fit: contain; 
+            border: 1px solid #ddd; 
+            display: block; 
+            margin: 0 auto;
+        }
+        .photo-description { 
+            margin-top: 5px; 
+            font-size: 9px; 
+            color: #666; 
+            word-wrap: break-word; 
+            line-height: 1.2;
+        }
+        .photo-name {
+            font-weight: bold;
+            font-size: 9px;
+            margin-bottom: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Limpa Rio - Lote 05 - Arvores Por Frente</h1>
+    <p style="text-align: center; margin-bottom: 20px; font-size: 11px;">
+        <strong>Data de Exportação:</strong> ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}
+    </p>
+`;
+
+            let isFirstSector = true;
+
+            Object.keys(sectors).forEach(sectorKey => {
+                const sector = sectors[sectorKey];
+                const photos = sector.photos;
+                
+                // Dividir fotos em grupos de 9 por página
+                for (let pageStart = 0; pageStart < photos.length; pageStart += 9) {
+                    // Quebrar página se não for a primeira página do primeiro setor
+                    if (!isFirstSector || pageStart > 0) {
+                        wordContent += `<div class="page-break"></div>`;
+                    }
+                    
+                    const pagePhotos = photos.slice(pageStart, pageStart + 9);
+                    const isFirstPage = pageStart === 0;
+                    
+                    wordContent += `
+                        <h2>${sector.frente} - ${sector.municipio}${!isFirstPage ? ' (continuação)' : ''}</h2>
+                        ${isFirstPage ? `
+                        <div class="sector-info">
+                            <strong>🌳 Quantidade de Árvores:</strong> ${sector.quantidadeArvores} | 
+                            <strong>📷 Total de Fotos:</strong> ${photos.length}
+                        </div>` : ''}
+                        <div class="photos-grid">
+                    `;
+                    
+                    // Organizar fotos em linhas de 3
+                    for (let i = 0; i < pagePhotos.length; i += 3) {
+                        wordContent += `<div class="photos-row">`;
+                        
+                        // Adicionar até 3 fotos por linha
+                        for (let j = i; j < Math.min(i + 3, pagePhotos.length); j++) {
+                            const photo = pagePhotos[j];
+                            wordContent += `
+                                <div class="photo-cell">
+                                    <div class="photo-container">
+                                        <img src="${photo.src}" alt="Foto ${pageStart + j + 1}">
+                                        <div class="photo-name">${photo.name.length > 20 ? photo.name.substring(0, 20) + '...' : photo.name}</div>
+                                        ${photo.description ? `<div class="photo-description">${photo.description.length > 50 ? photo.description.substring(0, 50) + '...' : photo.description}</div>` : ''}
+                                    </div>
+                                </div>`;
+                        }
+                        
+                        // Preencher células vazias se necessário
+                        const remainingCells = 3 - (Math.min(i + 3, pagePhotos.length) - i);
+                        for (let k = 0; k < remainingCells; k++) {
+                            wordContent += `<div class="photo-cell"></div>`;
+                        }
+                        
+                        wordContent += `</div>`;
+                    }
+                    
+                    wordContent += `</div>`;
+                }
+                
+                isFirstSector = false;
+            });
+
+            wordContent += `
+</body>
+</html>`;
+
+            // Criar e baixar arquivo
+            const blob = new Blob(['\ufeff', wordContent], { 
+                type: 'application/vnd.ms-word;charset=utf-8' 
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `galeria-fotos-${new Date().toISOString().split('T')[0]}.doc`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function exportToHTML() {
+            if (Object.keys(sectors).length === 0) {
+                alert('Adicione algumas fotos antes de exportar!');
+                return;
+            }
+
+            // Criar conteúdo HTML completo
+            let htmlContent = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galeria de Fotos por Setores - Relatório</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .export-info {
+            background: #f8fafc;
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        
+        .gallery {
+            padding: 30px;
+        }
+        
+        .sector {
+            margin-bottom: 40px;
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .sector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .sector-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .photo-count {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .photo-item {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .photo-item img {
+            width: 100%;
+            max-height: 250px;
+            object-fit: contain;
+            background: #f8fafc;
+        }
+        
+        .photo-info {
+            padding: 15px;
+        }
+        
+        .photo-description {
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+        
+        .summary {
+            background: #f0f9ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary h3 {
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; }
+            .sector { page-break-inside: avoid; }
+        }
+        
+        @media (max-width: 768px) {
+            .photos-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Limpa Rio - Lote 05 - Arvores Por Frente</h1>
+        </div>
+        
+        <div class="export-info">
+            <p><strong>📅 Data de Exportação:</strong> ${new Date().toLocaleDateString('pt-BR', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            })}</p>
+            <p><strong>⏰ Horário:</strong> ${new Date().toLocaleTimeString('pt-BR')}</p>
+        </div>
+        
+        <div class="gallery">
+            <div class="summary">
+                <h3>📊 Resumo Geral</h3>
+                <p><strong>Total de Setores:</strong> ${Object.keys(sectors).length}</p>
+                <p><strong>Total de Fotos:</strong> ${Object.values(sectors).reduce((total, sector) => total + sector.photos.length, 0)}</p>
+            </div>
+`;
+
+            Object.keys(sectors).forEach(sectorKey => {
+                const sector = sectors[sectorKey];
+                const photos = sector.photos;
+                
+                htmlContent += `
+            <div class="sector">
+                <div class="sector-header">
+                    <div>
+                        <h2 class="sector-title">${sector.frente} - ${sector.municipio}</h2>
+                        <p style="color: #6b7280; margin-top: 5px; font-size: 0.9rem;">🌳 ${sector.quantidadeArvores} árvores</p>
+                    </div>
+                    <span class="photo-count">${photos.length} foto${photos.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div class="photos-grid">
+`;
+                
+                photos.forEach((photo, index) => {
+                    htmlContent += `
+                    <div class="photo-item">
+                        <img src="${photo.src}" alt="Foto ${index + 1} - ${photo.name}" loading="lazy" style="max-width: 100%; height: auto; object-fit: contain;">
+                        <div class="photo-info">
+                            <strong>📷 ${photo.name}</strong>
+                            ${photo.description ? `<div class="photo-description">${photo.description}</div>` : ''}
+                        </div>
+                    </div>
+`;
+                });
+                
+                htmlContent += `
+                </div>
+            </div>
+`;
+            });
+
+            htmlContent += `
+        </div>
+    </div>
+</body>
+</html>`;
+
+            // Criar e baixar arquivo
+            const blob = new Blob([htmlContent], { 
+                type: 'text/html;charset=utf-8' 
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `galeria-fotos-${new Date().toISOString().split('T')[0]}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function exportToPDF() {
+            if (Object.keys(sectors).length === 0) {
+                alert('Adicione algumas fotos antes de exportar!');
+                return;
+            }
+
+            // Criar elemento temporário para captura
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            tempDiv.style.top = '0';
+            tempDiv.style.width = '210mm'; // A4 width total
+            tempDiv.style.background = 'white';
+            tempDiv.style.fontFamily = 'Arial, sans-serif';
+            tempDiv.style.padding = '20px';
+
+            let pdfContent = `
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="color: #4facfe; font-size: 24px; margin-bottom: 10px;">
+                        Limpa Rio - Lote 05 - Arvores Por Frente
+                    </h1>
+                    <p style="font-size: 14px; color: #666;">
+                        <strong>Data de Exportação:</strong> ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}
+                    </p>
+                    <p style="font-size: 14px; color: #666; margin-top: 10px;">
+                        <strong>Total de Setores:</strong> ${Object.keys(sectors).length} | 
+                        <strong>Total de Fotos:</strong> ${Object.values(sectors).reduce((total, sector) => total + sector.photos.length, 0)}
+                    </p>
+                </div>
+            `;
+
+            let isFirstSector = true;
+
+            Object.keys(sectors).forEach(sectorKey => {
+                const sector = sectors[sectorKey];
+                const photos = sector.photos;
+                
+                // Dividir fotos em grupos de 9 por página (3x3)
+                for (let pageStart = 0; pageStart < photos.length; pageStart += 9) {
+                    // Quebrar página se não for a primeira página do primeiro setor
+                    if (!isFirstSector || pageStart > 0) {
+                        pdfContent += `<div style="page-break-before: always;"></div>`;
+                    }
+                    
+                    const pagePhotos = photos.slice(pageStart, pageStart + 9);
+                    const isFirstPage = pageStart === 0;
+                    
+                    pdfContent += `
+                        <div style="margin-bottom: 30px;">
+                            <h2 style="color: #374151; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-size: 18px;">
+                                ${sector.frente} - ${sector.municipio}${!isFirstPage ? ' (continuação)' : ''}
+                            </h2>
+                            ${isFirstPage ? `
+                            <p style="margin: 10px 0; font-size: 14px;">
+                                <strong>🌳 Quantidade de Árvores:</strong> ${sector.quantidadeArvores} | 
+                                <strong>📷 Total de Fotos:</strong> ${photos.length}
+                            </p>` : ''}
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; height: 220mm; align-content: start;">
+                    `;
+                    
+                    pagePhotos.forEach((photo, index) => {
+                        pdfContent += `
+                            <div style="text-align: center; page-break-inside: avoid; padding: 8px; height: 65mm;">
+                                <img src="${photo.src}" alt="Foto ${pageStart + index + 1}" 
+                                     style="width: 100%; max-width: 180px; height: 45mm; object-fit: contain; border: 1px solid #ddd; border-radius: 8px; background: #f8fafc; display: block; margin: 0 auto;">
+                                <div style="margin-top: 8px; font-size: 10px; line-height: 1.3; max-width: 180px; margin-left: auto; margin-right: auto; height: 15mm; overflow: hidden;">
+                                    <strong style="display: block; margin-bottom: 3px;">${photo.name.length > 18 ? photo.name.substring(0, 18) + '...' : photo.name}</strong>
+                                    ${photo.description ? `<em style="color: #666; display: block;">${photo.description.length > 40 ? photo.description.substring(0, 40) + '...' : photo.description}</em>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    pdfContent += `
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                isFirstSector = false;
+            });
+
+            tempDiv.innerHTML = pdfContent;
+            document.body.appendChild(tempDiv);
+
+            // Usar html2canvas para capturar o conteúdo
+            html2canvas(tempDiv, {
+                scale: 1.5,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                width: tempDiv.scrollWidth,
+                height: tempDiv.scrollHeight
+            }).then(canvas => {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                
+                const imgWidth = 210; // A4 width total
+                const pageHeight = 297; // A4 height total
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0; // Sem margem
+
+                // Adicionar primeira página
+                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                // Adicionar páginas adicionais se necessário
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                // Salvar PDF
+                pdf.save(`galeria-fotos-${new Date().toISOString().split('T')[0]}.pdf`);
+                
+                // Remover elemento temporário
+                document.body.removeChild(tempDiv);
+            }).catch(error => {
+                console.error('Erro ao gerar PDF:', error);
+                alert('Erro ao gerar PDF. Tente novamente.');
+                document.body.removeChild(tempDiv);
+            });
+        }
+
+        function exportToCSV() {
+            if (Object.keys(sectors).length === 0) {
+                alert('Adicione algumas fotos antes de exportar!');
+                return;
+            }
+
+            // Adicionar BOM para UTF-8
+            let csvContent = '\uFEFF';
+            csvContent += 'Frente,Município,Quantidade de Árvores,Nome da Foto,Descrição,Tamanho Estimado\n';
+            
+            Object.keys(sectors).forEach(sectorKey => {
+                const sector = sectors[sectorKey];
+                sector.photos.forEach(photo => {
+                    // Estimar tamanho do arquivo baseado no base64
+                    const sizeKB = Math.round((photo.src.length * 0.75) / 1024);
+                    const description = photo.description ? photo.description.replace(/"/g, '""') : '';
+                    csvContent += `"${sector.frente}","${sector.municipio}","${sector.quantidadeArvores}","${photo.name}","${description}","${sizeKB} KB"\n`;
+                });
+            });
+
+            // Adicionar resumo
+            csvContent += '\n--- RESUMO ---\n';
+            csvContent += 'Frente,Município,Quantidade de Árvores,Quantidade de Fotos\n';
+            Object.keys(sectors).forEach(sectorKey => {
+                const sector = sectors[sectorKey];
+                csvContent += `"${sector.frente}","${sector.municipio}","${sector.quantidadeArvores}",${sector.photos.length}\n`;
+            });
+
+            const totalPhotos = Object.values(sectors).reduce((total, sector) => total + sector.photos.length, 0);
+            csvContent += `"TOTAL",${totalPhotos}\n`;
+
+            // Criar e baixar arquivo
+            const blob = new Blob([csvContent], { 
+                type: 'text/csv;charset=utf-8;' 
+            });
+            
+            // Criar link de download
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `dados-galeria-${new Date().toISOString().split('T')[0]}.csv`;
+            
+            document.body.appendChild(a);
+            a.click();
+            
+            // Limpar
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        }
+
+        function importFromCSV(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                alert('Por favor, selecione um arquivo CSV válido!');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const csvText = e.target.result;
+                    parseCSVData(csvText);
+                } catch (error) {
+                    alert('Erro ao ler o arquivo CSV. Verifique se o formato está correto.');
+                    console.error('Erro ao importar CSV:', error);
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+            
+            // Limpar o input para permitir reimportar o mesmo arquivo
+            input.value = '';
+        }
+
+        function parseCSVData(csvText) {
+            // Remover BOM se presente
+            csvText = csvText.replace(/^\uFEFF/, '');
+            
+            const lines = csvText.split('\n');
+            let dataLines = [];
+            let inResumo = false;
+            
+            // Filtrar apenas as linhas de dados (antes do resumo)
+            for (let line of lines) {
+                line = line.trim();
+                if (line === '--- RESUMO ---' || line.startsWith('"--- RESUMO ---"')) {
+                    inResumo = true;
+                    continue;
+                }
+                if (!inResumo && line && !line.startsWith('Frente,Município')) {
+                    dataLines.push(line);
+                }
+            }
+
+            if (dataLines.length === 0) {
+                alert('Nenhum dado válido encontrado no arquivo CSV!');
+                return;
+            }
+
+            // Confirmar importação
+            const confirmImport = confirm(`Encontrados ${dataLines.length} registros no CSV.\n\nDeseja:\n- OK: Adicionar aos dados existentes\n- Cancelar: Substituir todos os dados atuais`);
+            
+            if (confirmImport === null) return; // Usuário cancelou
+            
+            if (!confirmImport) {
+                // Limpar dados existentes
+                sectors = {};
+                photoCounter = 0;
+            }
+
+            let importedCount = 0;
+            let errorCount = 0;
+
+            dataLines.forEach((line, index) => {
+                try {
+                    const columns = parseCSVLine(line);
+                    
+                    if (columns.length >= 4) {
+                        const frente = columns[0] || '';
+                        const municipio = columns[1] || '';
+                        const quantidadeArvores = columns[2] || '';
+                        const nomeArquivo = columns[3] || '';
+                        const descricao = columns[4] || '';
+                        
+                        if (frente && municipio && nomeArquivo) {
+                            const sectorKey = `${frente} - ${municipio}`;
+                            
+                            if (!sectors[sectorKey]) {
+                                sectors[sectorKey] = {
+                                    frente: frente,
+                                    municipio: municipio,
+                                    quantidadeArvores: quantidadeArvores,
+                                    photos: []
+                                };
+                            }
+
+                            // Criar uma imagem placeholder para o arquivo importado
+                            const photo = {
+                                id: ++photoCounter,
+                                name: nomeArquivo,
+                                src: createPlaceholderImage(nomeArquivo),
+                                sector: sectorKey,
+                                description: descricao,
+                                isPlaceholder: true
+                            };
+                            
+                            sectors[sectorKey].photos.push(photo);
+                            importedCount++;
+                        }
+                    }
+                } catch (error) {
+                    errorCount++;
+                    console.error(`Erro na linha ${index + 1}:`, error);
+                }
+            });
+
+            renderGallery();
+            
+            let message = `Importação concluída!\n\n`;
+            message += `✅ ${importedCount} registros importados com sucesso\n`;
+            if (errorCount > 0) {
+                message += `⚠️ ${errorCount} registros com erro\n`;
+            }
+            message += `\nNota: As imagens foram substituídas por placeholders. Você pode substituí-las pelas imagens reais posteriormente.`;
+            
+            alert(message);
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            let i = 0;
+            
+            while (i < line.length) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                        // Aspas duplas escapadas
+                        current += '"';
+                        i += 2;
+                    } else {
+                        // Início ou fim de campo com aspas
+                        inQuotes = !inQuotes;
+                        i++;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    // Separador de campo
+                    result.push(current.trim());
+                    current = '';
+                    i++;
+                } else {
+                    current += char;
+                    i++;
+                }
+            }
+            
+            // Adicionar o último campo
+            result.push(current.trim());
+            
+            return result;
+        }
+
+        function createPlaceholderImage(filename) {
+            // Criar uma imagem SVG placeholder
+            const svg = `
+                <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="200" height="200" fill="#f3f4f6" stroke="#d1d5db" stroke-width="2"/>
+                    <text x="100" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#6b7280">
+                        📁 Arquivo CSV
+                    </text>
+                    <text x="100" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#9ca3af">
+                        ${filename.length > 20 ? filename.substring(0, 20) + '...' : filename}
+                    </text>
+                    <text x="100" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#9ca3af">
+                        Clique para substituir
+                    </text>
+                </svg>
+            `;
+            
+            return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+        }
+
+        function replacePlaceholder(sectorKey, photoId) {
+            // Criar input file temporário
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.style.display = 'none';
+            
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        // Encontrar e atualizar a foto
+                        const photo = sectors[sectorKey].photos.find(p => p.id === photoId);
+                        if (photo) {
+                            photo.src = event.target.result;
+                            photo.isPlaceholder = false;
+                            renderGallery();
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+                document.body.removeChild(input);
+            };
+            
+            document.body.appendChild(input);
+            input.click();
+        }
+
+        // Variáveis para drag and drop
+        let draggedElement = null;
+        let draggedPhotoId = null;
+        let draggedSectorKey = null;
+
+        function handleDragStart(event) {
+            draggedElement = event.target;
+            draggedPhotoId = parseInt(event.target.dataset.photoId);
+            draggedSectorKey = event.target.dataset.sector;
+            
+            event.target.classList.add('dragging');
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/html', event.target.outerHTML);
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            
+            const targetElement = event.target.closest('.photo-item');
+            if (targetElement && targetElement !== draggedElement) {
+                targetElement.classList.add('drag-over');
+            }
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            
+            const targetElement = event.target.closest('.photo-item');
+            if (!targetElement || targetElement === draggedElement) {
+                return;
+            }
+            
+            const targetPhotoId = parseInt(targetElement.dataset.photoId);
+            const targetSectorKey = targetElement.dataset.sector;
+            
+            // Só permite reordenar dentro do mesmo setor
+            if (draggedSectorKey === targetSectorKey) {
+                reorderPhotos(draggedSectorKey, draggedPhotoId, targetPhotoId);
+            }
+            
+            // Limpar classes de drag
+            document.querySelectorAll('.photo-item').forEach(item => {
+                item.classList.remove('drag-over');
+            });
+        }
+
+        function handleDragEnd(event) {
+            event.target.classList.remove('dragging');
+            document.querySelectorAll('.photo-item').forEach(item => {
+                item.classList.remove('drag-over');
+            });
+            
+            draggedElement = null;
+            draggedPhotoId = null;
+            draggedSectorKey = null;
+        }
+
+        function reorderPhotos(sectorKey, draggedId, targetId) {
+            const photos = sectors[sectorKey].photos;
+            const draggedIndex = photos.findIndex(photo => photo.id === draggedId);
+            const targetIndex = photos.findIndex(photo => photo.id === targetId);
+            
+            if (draggedIndex === -1 || targetIndex === -1) return;
+            
+            // Remove o item arrastado e insere na nova posição
+            const draggedPhoto = photos.splice(draggedIndex, 1)[0];
+            photos.splice(targetIndex, 0, draggedPhoto);
+            
+            // Re-renderizar a galeria
+            renderGallery();
+        }
+
+        // Permitir arrastar e soltar arquivos
+        document.addEventListener('DOMContentLoaded', function() {
+            const gallery = document.getElementById('gallery');
+            
+            gallery.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                gallery.style.background = '#f0f9ff';
+            });
+            
+            gallery.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                gallery.style.background = '';
+            });
+            
+            gallery.addEventListener('drop', function(e) {
+                e.preventDefault();
+                gallery.style.background = '';
+                
+                const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+                if (files.length > 0) {
+                    const frente = prompt('Digite a Frente:');
+                    if (!frente) return;
+                    
+                    const municipio = prompt('Digite o Município:');
+                    if (!municipio) return;
+                    
+                    const quantidadeArvores = prompt('Digite a Quantidade de Árvores:');
+                    if (!quantidadeArvores) return;
+                    
+                    const sectorKey = `${frente.trim()} - ${municipio.trim()}`;
+                    
+                    if (!sectors[sectorKey]) {
+                        sectors[sectorKey] = {
+                            frente: frente.trim(),
+                            municipio: municipio.trim(),
+                            quantidadeArvores: quantidadeArvores.trim(),
+                            photos: []
+                        };
+                    }
+                    
+                    files.forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const photo = {
+                                id: ++photoCounter,
+                                name: file.name,
+                                src: e.target.result,
+                                sector: sectorKey
+                            };
+                            sectors[sectorKey].photos.push(photo);
+                            renderGallery();
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+            });
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97c7a984a252da2e',t:'MTc1NzQzMTE0OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

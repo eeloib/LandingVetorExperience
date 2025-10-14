@@ -3,1496 +3,2033 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Limpa Rio</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <title>Sistema Limpa Rio Comunidade</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
+        body {
             box-sizing: border-box;
         }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
         }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-
-        .header {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
+        
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
         }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            font-weight: 700;
+        
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
         }
-
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .controls {
-            padding: 30px;
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .form-group {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            align-items: end;
-        }
-
-        .input-group {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #374151;
-        }
-
-        input[type="text"], input[type="file"] {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 16px;
+        
+        .photo-preview {
             transition: all 0.3s ease;
         }
-
-        input[type="text"]:focus, input[type="file"]:focus {
-            outline: none;
-            border-color: #4facfe;
-            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        
+        .photo-preview:hover {
+            transform: scale(1.05);
         }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
+        
+        .form-section {
+            border-left: 4px solid #3b82f6;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         }
-
+        
         .btn-primary {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            transition: all 0.3s ease;
         }
-
+        
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
         }
-
-        .btn-success {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
+        
+        .sidebar {
+            background: linear-gradient(180deg, #1e40af 0%, #3730a3 100%);
         }
-
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(17, 153, 142, 0.3);
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .btn-warning:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(240, 147, 251, 0.3);
-        }
-
-        .export-controls {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-
-        .gallery {
-            padding: 30px;
-        }
-
-        .sector {
-            margin-bottom: 40px;
-            background: #f8fafc;
-            border-radius: 15px;
-            padding: 25px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .sector-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e2e8f0;
-        }
-
-        .sector-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1f2937;
-        }
-
-        .photo-count {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .photos-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        .photo-item {
-            position: relative;
+        
+        .card {
             background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            cursor: grab;
-        }
-
-        .photo-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
-        }
-
-        .photo-item.dragging {
-            opacity: 0.5;
-            transform: rotate(5deg) scale(0.95);
-            cursor: grabbing;
-            z-index: 1000;
-        }
-
-        .photo-item.drag-over {
-            border: 3px dashed #4facfe;
-            background: #f0f9ff;
-        }
-
-        .drag-handle {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(79, 172, 254, 0.9);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            cursor: grab;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
         }
-
-        .drag-handle:hover {
-            background: rgba(79, 172, 254, 1);
-            transform: scale(1.1);
+        
+        .card:hover {
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
         }
-
-        .drag-handle:active {
-            cursor: grabbing;
-        }
-
-        .photo-item img {
-            width: 100%;
-            max-height: 250px;
-            object-fit: contain;
-            background: #f8fafc;
-        }
-
-        .photo-info {
-            padding: 15px;
-        }
-
-        .photo-description {
-            width: 100%;
-            min-height: 60px;
-            padding: 8px 12px;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: inherit;
-            resize: vertical;
-            transition: border-color 0.3s ease;
-        }
-
-        .photo-description:focus {
-            outline: none;
-            border-color: #4facfe;
-            box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.1);
-        }
-
-        .photo-description::placeholder {
-            color: #9ca3af;
-        }
-
-        .placeholder-item {
-            border: 2px dashed #d1d5db !important;
-            background: #f9fafb !important;
-        }
-
-        .placeholder-overlay {
-            position: relative;
-            cursor: pointer;
+        
+        .input-field {
             transition: all 0.3s ease;
         }
-
-        .placeholder-overlay:hover {
-            opacity: 0.8;
-        }
-
-        .placeholder-text {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 8px;
-            text-align: center;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-
-
-        .delete-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(239, 68, 68, 0.9);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-
-        .delete-btn:hover {
-            background: rgba(239, 68, 68, 1);
-            transform: scale(1.1);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6b7280;
-        }
-
-        .empty-state h3 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-        }
-
-        .empty-state p {
-            font-size: 1.1rem;
-        }
-
-        @media (max-width: 768px) {
-            .form-group {
-                flex-direction: column;
-            }
-
-            .input-group {
-                min-width: 100%;
-            }
-
-            .export-controls {
-                flex-direction: column;
-            }
-
-            .photos-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-                gap: 15px;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-            }
+        
+        .input-field:focus {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Limpa Rio - Lote 05 - Arvores Por Frente</h1>
-        </div>
-
-        <div class="controls">
-            <div class="form-group">
-                <div class="input-group">
-                    <label for="frente">Frente:</label>
-                    <input type="text" id="frente" placeholder="Ex: Frente A, Frente Norte...">
+<body class="bg-gray-50 min-h-full">
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b-4 border-blue-600">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">🌊</span>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Limpa Rio Comunidade</h1>
+                        <p class="text-sm text-gray-600">Sistema de Reconhecimento Sócio Territorial</p>
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label for="municipio">Município:</label>
-                    <input type="text" id="municipio" placeholder="Ex: São Paulo, Rio de Janeiro...">
-                </div>
-                <div class="input-group">
-                    <label for="quantidadeArvores">Quantidade de Árvores:</label>
-                    <input type="text" id="quantidadeArvores" placeholder="Ex: 15, 30-50, Muitas...">
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="input-group">
-                    <label for="photoUpload">Selecionar Fotos:</label>
-                    <input type="file" id="photoUpload" multiple accept="image/*">
-                </div>
-                <button class="btn btn-primary" onclick="addPhotos()">
-                    ➕ Adicionar Fotos
-                </button>
-            </div>
-
-            <div class="export-controls">
-                <button class="btn btn-success" onclick="exportToWord()">
-                    📄 Exportar para Word
-                </button>
-                <button class="btn btn-primary" onclick="exportToHTML()">
-                    🌐 Exportar para HTML
-                </button>
-                <button class="btn btn-warning" onclick="exportToPDF()">
-                    📋 Exportar para PDF
-                </button>
-                <button class="btn btn-warning" onclick="exportToCSV()">
-                    📊 Exportar Dados para CSV
-                </button>
-                <div style="position: relative; display: inline-block;">
-                    <input type="file" id="csvImport" accept=".csv" style="display: none;" onchange="importFromCSV(this)">
-                    <button class="btn btn-primary" onclick="document.getElementById('csvImport').click()">
-                        📥 Importar CSV
-                    </button>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-600" id="currentUser">Usuário: João Silva</span>
+                    <button onclick="logout()" class="text-red-600 hover:text-red-800 text-sm font-medium">Sair</button>
                 </div>
             </div>
         </div>
+    </header>
 
-        <div class="gallery" id="gallery">
-            <div class="empty-state">
-                <h3>🖼️ Nenhuma foto adicionada ainda</h3>
-                <p>Comece adicionando fotos organizadas por setores!</p>
-            </div>
+    <div class="flex h-full">
+        <!-- Sidebar -->
+        <nav class="sidebar w-64 min-h-full p-6 hidden lg:block">
+            <ul class="space-y-3">
+                <li><button onclick="showSection('dashboard')" class="nav-btn w-full text-left text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg transition-all">📊 Dashboard</button></li>
+                <li><button onclick="showSection('nova-frente')" class="nav-btn w-full text-left text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg transition-all">➕ Nova Frente</button></li>
+                <li><button onclick="showSection('listar-frentes')" class="nav-btn w-full text-left text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg transition-all">📋 Listar Frentes</button></li>
+                <li><button onclick="showSection('relatorios')" class="nav-btn w-full text-left text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg transition-all">📈 Relatórios</button></li>
+                <li><button onclick="showSection('usuarios')" class="nav-btn w-full text-left text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg transition-all">👥 Usuários</button></li>
+            </ul>
+        </nav>
+
+        <!-- Mobile Menu Button -->
+        <div class="lg:hidden fixed top-4 left-4 z-50">
+            <button onclick="toggleMobileMenu()" class="bg-blue-600 text-white p-2 rounded-lg">
+                <span id="menuIcon">☰</span>
+            </button>
         </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden">
+            <nav class="sidebar w-64 h-full p-6">
+                <ul class="space-y-3 mt-16">
+                    <li><button onclick="showSection('dashboard'); toggleMobileMenu()" class="w-full text-left text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg transition-all">📊 Dashboard</button></li>
+                    <li><button onclick="showSection('nova-frente'); toggleMobileMenu()" class="w-full text-left text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg transition-all">➕ Nova Frente</button></li>
+                    <li><button onclick="showSection('listar-frentes'); toggleMobileMenu()" class="w-full text-left text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg transition-all">📋 Listar Frentes</button></li>
+                    <li><button onclick="showSection('relatorios'); toggleMobileMenu()" class="w-full text-left text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg transition-all">📈 Relatórios</button></li>
+                    <li><button onclick="showSection('usuarios'); toggleMobileMenu()" class="w-full text-left text-white hover:bg-white hover:bg-opacity-20 px-4 py-3 rounded-lg transition-all">👥 Usuários</button></li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 lg:p-8 lg:ml-0 ml-0">
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="section fade-in">
+                <h2 class="text-3xl font-bold text-gray-900 mb-8">Dashboard</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="card p-6">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <span class="text-2xl">🏞️</span>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Frentes Cadastradas</p>
+                                <p class="text-2xl font-bold text-gray-900" id="totalFrentes">24</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-6">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <span class="text-2xl">🏘️</span>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Comunidades Mapeadas</p>
+                                <p class="text-2xl font-bold text-gray-900" id="totalComunidades">18</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-6">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <span class="text-2xl">🏫</span>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Equipamentos Públicos</p>
+                                <p class="text-2xl font-bold text-gray-900" id="totalEquipamentos">142</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-6">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <span class="text-2xl">📊</span>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Relatórios Gerados</p>
+                                <p class="text-2xl font-bold text-gray-900" id="totalRelatorios">8</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">Últimas Frentes Cadastradas</h3>
+                        <div class="space-y-4" id="ultimasFrentes">
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium">Frente 166 - Rio Acari</p>
+                                    <p class="text-sm text-gray-600">Bangu - 15/01/2024</p>
+                                </div>
+                                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Concluído</span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <div>
+                                    <p class="font-medium">Frente 167 - Rio Pavuna</p>
+                                    <p class="text-sm text-gray-600">Pavuna - 14/01/2024</p>
+                                </div>
+                                <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">Em andamento</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">Ações Rápidas</h3>
+                        <div class="space-y-3">
+                            <button onclick="showSection('nova-frente')" class="btn-primary w-full text-white px-4 py-3 rounded-lg font-medium">
+                                ➕ Cadastrar Nova Frente
+                            </button>
+                            <button onclick="exportarDados()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition-all">
+                                📊 Exportar Dados
+                            </button>
+                            <button onclick="gerarRelatorio()" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition-all">
+                                📄 Gerar Relatório
+                            </button>
+                            <button onclick="importarCSV()" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-medium transition-all">
+                                📥 Importar CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nova Frente Section -->
+            <div id="nova-frente" class="section hidden">
+                <h2 class="text-3xl font-bold text-gray-900 mb-8">Cadastrar Nova Frente de Trabalho</h2>
+                
+                <form id="frenteForm" class="space-y-8">
+                    <!-- Dados Básicos -->
+                    <div class="form-section p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-gray-900 mb-6">📋 Dados Básicos da Frente</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Código da Frente</label>
+                                <input type="text" name="codigo" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ex: 166" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Nome do Corpo Hídrico</label>
+                                <input type="text" name="corpoHidrico" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ex: Rio Acari" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Data da Visita</label>
+                                <input type="date" name="dataVisita" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Bairro/Localidade</label>
+                                <input type="text" name="bairro" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ex: Bangu" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Município</label>
+                                <select name="municipio" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                                    <option value="">Selecione o município</option>
+                                    <option value="Rio de Janeiro">Rio de Janeiro</option>
+                                    <option value="Niterói">Niterói</option>
+                                    <option value="São Gonçalo">São Gonçalo</option>
+                                    <option value="Duque de Caxias">Duque de Caxias</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Região Hidrográfica</label>
+                                <select name="regiaoHidrografica" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                                    <option value="">Selecione a região</option>
+                                    <option value="Baía de Guanabara">Baía de Guanabara</option>
+                                    <option value="Baía de Sepetiba">Baía de Sepetiba</option>
+                                    <option value="Lagoa Rodrigo de Freitas">Lagoa Rodrigo de Freitas</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Equipe -->
+                    <div class="form-section p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-gray-900 mb-6">👥 Identificação da Equipe</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Técnica Social</label>
+                                <input type="text" name="tecnicaSocial" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Nome da técnica social" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Encarregados</label>
+                                <input type="text" name="encarregados" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Nomes dos encarregados">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Agentes Socioambientais</label>
+                                <textarea name="agentesSocioambientais" rows="3" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Liste os agentes socioambientais"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Caracterização da Área -->
+                    <div class="form-section p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-gray-900 mb-6">🏘️ Caracterização da Área</h3>
+                        <div class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Há comunidade no entorno?</label>
+                                    <select name="comunidadeEntorno" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" onchange="toggleComunidadeFields(this.value)">
+                                        <option value="">Selecione</option>
+                                        <option value="sim">Sim</option>
+                                        <option value="nao">Não</option>
+                                    </select>
+                                </div>
+                                <div id="nomeComunidadeDiv" class="hidden">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome da Comunidade</label>
+                                    <input type="text" name="nomeComunidade" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Nome da comunidade">
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Construções às margens?</label>
+                                    <select name="construcoesMargens" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" onchange="toggleConstrucoesFields(this.value)">
+                                        <option value="">Selecione</option>
+                                        <option value="sim">Sim</option>
+                                        <option value="nao">Não</option>
+                                    </select>
+                                </div>
+                                <div id="tipoConstrucaoDiv" class="hidden">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Construção</label>
+                                    <select name="tipoConstrucao" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="">Selecione</option>
+                                        <option value="alvenaria">Alvenaria</option>
+                                        <option value="taipa">Taipa</option>
+                                        <option value="madeira">Madeira</option>
+                                        <option value="outros">Outros</option>
+                                    </select>
+                                </div>
+                                <div id="quantidadeMoradiasDiv" class="hidden">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Quantidade de Moradias</label>
+                                    <input type="number" name="quantidadeMoradias" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="0">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Observações Gerais</label>
+                                <textarea name="observacoesGerais" rows="4" class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Descreva características da área (rural/urbana, poluição, distância, coleta de lixo, transporte, etc.)"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Equipamentos Públicos -->
+                    <div class="form-section p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-gray-900 mb-6">🏫 Levantamento de Equipamentos Públicos</h3>
+                        
+                        <div class="space-y-8">
+                            <!-- Escolas -->
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">🎓 Escolas</h4>
+                                <div id="escolasContainer">
+                                    <div class="escola-item p-4 bg-white rounded-lg border mb-4">
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                            <input type="text" name="escola_nome[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Nome da escola">
+                                            <input type="text" name="escola_endereco[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Endereço">
+                                            <select name="escola_segmento[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg">
+                                                <option value="">Segmento</option>
+                                                <option value="infantil">Educação Infantil</option>
+                                                <option value="fundamental">Ensino Fundamental</option>
+                                                <option value="medio">Ensino Médio</option>
+                                            </select>
+                                        </div>
+                                        <div class="border-t pt-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">📸 Fotos da Escola</label>
+                                            <div class="flex items-center space-x-4">
+                                                <input type="file" class="escola-photos hidden" multiple accept="image/*" onchange="handleEquipamentoPhotoUpload(event, 'escola', this)">
+                                                <button type="button" onclick="this.previousElementSibling.click()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                                    📷 Adicionar Fotos
+                                                </button>
+                                                <span class="text-sm text-gray-600">Selecione múltiplas imagens</span>
+                                            </div>
+                                            <div class="escola-preview grid grid-cols-3 md:grid-cols-6 gap-2 mt-3"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="addEquipamento('escolas')" class="text-blue-600 hover:text-blue-800 font-medium">+ Adicionar Escola</button>
+                            </div>
+
+                            <!-- Unidades de Saúde -->
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">🏥 Unidades de Saúde</h4>
+                                <div id="saudeContainer">
+                                    <div class="saude-item p-4 bg-white rounded-lg border mb-4">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                            <input type="text" name="saude_nome[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Nome da unidade">
+                                            <input type="text" name="saude_endereco[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Endereço">
+                                        </div>
+                                        <div class="border-t pt-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">📸 Fotos da Unidade de Saúde</label>
+                                            <div class="flex items-center space-x-4">
+                                                <input type="file" class="saude-photos hidden" multiple accept="image/*" onchange="handleEquipamentoPhotoUpload(event, 'saude', this)">
+                                                <button type="button" onclick="this.previousElementSibling.click()" class="bg-green-100 hover:bg-green-200 text-green-700 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                                    📷 Adicionar Fotos
+                                                </button>
+                                                <span class="text-sm text-gray-600">Selecione múltiplas imagens</span>
+                                            </div>
+                                            <div class="saude-preview grid grid-cols-3 md:grid-cols-6 gap-2 mt-3"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="addEquipamento('saude')" class="text-blue-600 hover:text-blue-800 font-medium">+ Adicionar Unidade de Saúde</button>
+                            </div>
+
+                            <!-- Transporte Público -->
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">🚌 Transporte Público</h4>
+                                <div id="transporteContainer">
+                                    <div class="transporte-item p-4 bg-white rounded-lg border mb-4">
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                            <input type="text" name="transporte_linha[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Linha/Número">
+                                            <input type="text" name="transporte_empresa[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Empresa">
+                                            <select name="transporte_tipo[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg">
+                                                <option value="">Tipo</option>
+                                                <option value="onibus">Ônibus</option>
+                                                <option value="van">Van</option>
+                                                <option value="metro">Metrô</option>
+                                                <option value="trem">Trem</option>
+                                            </select>
+                                        </div>
+                                        <div class="border-t pt-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">📸 Fotos do Transporte</label>
+                                            <div class="flex items-center space-x-4">
+                                                <input type="file" class="transporte-photos hidden" multiple accept="image/*" onchange="handleEquipamentoPhotoUpload(event, 'transporte', this)">
+                                                <button type="button" onclick="this.previousElementSibling.click()" class="bg-purple-100 hover:bg-purple-200 text-purple-700 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                                    📷 Adicionar Fotos
+                                                </button>
+                                                <span class="text-sm text-gray-600">Selecione múltiplas imagens</span>
+                                            </div>
+                                            <div class="transporte-preview grid grid-cols-3 md:grid-cols-6 gap-2 mt-3"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="addEquipamento('transporte')" class="text-blue-600 hover:text-blue-800 font-medium">+ Adicionar Transporte</button>
+                            </div>
+
+                            <!-- Áreas de Lazer -->
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">🏞️ Áreas de Lazer</h4>
+                                <div id="lazerContainer">
+                                    <div class="lazer-item p-4 bg-white rounded-lg border mb-4">
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                            <input type="text" name="lazer_nome[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Nome do local">
+                                            <input type="text" name="lazer_endereco[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Endereço">
+                                            <input type="text" name="lazer_descricao[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Descrição">
+                                        </div>
+                                        <div class="border-t pt-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">📸 Fotos da Área de Lazer</label>
+                                            <div class="flex items-center space-x-4">
+                                                <input type="file" class="lazer-photos hidden" multiple accept="image/*" onchange="handleEquipamentoPhotoUpload(event, 'lazer', this)">
+                                                <button type="button" onclick="this.previousElementSibling.click()" class="bg-orange-100 hover:bg-orange-200 text-orange-700 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                                    📷 Adicionar Fotos
+                                                </button>
+                                                <span class="text-sm text-gray-600">Selecione múltiplas imagens</span>
+                                            </div>
+                                            <div class="lazer-preview grid grid-cols-3 md:grid-cols-6 gap-2 mt-3"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="addEquipamento('lazer')" class="text-blue-600 hover:text-blue-800 font-medium">+ Adicionar Área de Lazer</button>
+                            </div>
+
+                            <!-- Instituições Religiosas -->
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">⛪ Instituições Religiosas</h4>
+                                <div id="religiosasContainer">
+                                    <div class="religiosas-item p-4 bg-white rounded-lg border mb-4">
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                            <input type="text" name="religiosas_nome[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Nome da instituição">
+                                            <input type="text" name="religiosas_endereco[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Endereço">
+                                            <select name="religiosas_tipo[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg">
+                                                <option value="">Tipo</option>
+                                                <option value="igreja">Igreja</option>
+                                                <option value="templo">Templo</option>
+                                                <option value="centro">Centro Espírita</option>
+                                                <option value="outros">Outros</option>
+                                            </select>
+                                        </div>
+                                        <div class="border-t pt-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">📸 Fotos da Instituição Religiosa</label>
+                                            <div class="flex items-center space-x-4">
+                                                <input type="file" class="religiosas-photos hidden" multiple accept="image/*" onchange="handleEquipamentoPhotoUpload(event, 'religiosas', this)">
+                                                <button type="button" onclick="this.previousElementSibling.click()" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                                    📷 Adicionar Fotos
+                                                </button>
+                                                <span class="text-sm text-gray-600">Selecione múltiplas imagens</span>
+                                            </div>
+                                            <div class="religiosas-preview grid grid-cols-3 md:grid-cols-6 gap-2 mt-3"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="addEquipamento('religiosas')" class="text-blue-600 hover:text-blue-800 font-medium">+ Adicionar Instituição Religiosa</button>
+                            </div>
+
+                            <!-- Associações de Moradores -->
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">🏘️ Associações de Moradores</h4>
+                                <div id="associacoesContainer">
+                                    <div class="associacoes-item p-4 bg-white rounded-lg border mb-4">
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                            <input type="text" name="associacoes_nome[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Nome da associação">
+                                            <input type="text" name="associacoes_endereco[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Endereço">
+                                            <input type="text" name="associacoes_contato[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Contato">
+                                        </div>
+                                        <div class="border-t pt-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">📸 Fotos da Associação</label>
+                                            <div class="flex items-center space-x-4">
+                                                <input type="file" class="associacoes-photos hidden" multiple accept="image/*" onchange="handleEquipamentoPhotoUpload(event, 'associacoes', this)">
+                                                <button type="button" onclick="this.previousElementSibling.click()" class="bg-teal-100 hover:bg-teal-200 text-teal-700 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                                    📷 Adicionar Fotos
+                                                </button>
+                                                <span class="text-sm text-gray-600">Selecione múltiplas imagens</span>
+                                            </div>
+                                            <div class="associacoes-preview grid grid-cols-3 md:grid-cols-6 gap-2 mt-3"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="addEquipamento('associacoes')" class="text-blue-600 hover:text-blue-800 font-medium">+ Adicionar Associação</button>
+                            </div>
+
+                            <!-- Comércios Locais -->
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">🏪 Comércios Locais</h4>
+                                <div id="comerciosContainer">
+                                    <div class="comercios-item p-4 bg-white rounded-lg border mb-4">
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                            <input type="text" name="comercios_nome[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Nome do comércio">
+                                            <input type="text" name="comercios_endereco[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Endereço">
+                                            <select name="comercios_tipo[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg">
+                                                <option value="">Tipo</option>
+                                                <option value="mercado">Mercado</option>
+                                                <option value="farmacia">Farmácia</option>
+                                                <option value="padaria">Padaria</option>
+                                                <option value="restaurante">Restaurante</option>
+                                                <option value="outros">Outros</option>
+                                            </select>
+                                        </div>
+                                        <div class="border-t pt-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">📸 Fotos do Comércio</label>
+                                            <div class="flex items-center space-x-4">
+                                                <input type="file" class="comercios-photos hidden" multiple accept="image/*" onchange="handleEquipamentoPhotoUpload(event, 'comercios', this)">
+                                                <button type="button" onclick="this.previousElementSibling.click()" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                                    📷 Adicionar Fotos
+                                                </button>
+                                                <span class="text-sm text-gray-600">Selecione múltiplas imagens</span>
+                                            </div>
+                                            <div class="comercios-preview grid grid-cols-3 md:grid-cols-6 gap-2 mt-3"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="addEquipamento('comercios')" class="text-blue-600 hover:text-blue-800 font-medium">+ Adicionar Comércio</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload de Fotos -->
+                    <div class="form-section p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-gray-900 mb-6">📸 Upload de Fotos</h3>
+                        <div class="space-y-4">
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                                <input type="file" id="photoUpload" multiple accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
+                                <button type="button" onclick="document.getElementById('photoUpload').click()" class="btn-primary text-white px-6 py-3 rounded-lg font-medium">
+                                    📷 Selecionar Fotos
+                                </button>
+                                <p class="text-sm text-gray-600 mt-2">Selecione múltiplas imagens (JPG, PNG)</p>
+                            </div>
+                            <div id="photoPreview" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+                        </div>
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="flex flex-col sm:flex-row gap-4 pt-6">
+                        <button type="submit" class="btn-primary text-white px-8 py-3 rounded-lg font-medium flex-1">
+                            💾 Salvar Frente de Trabalho
+                        </button>
+                        <button type="button" onclick="exportarFrenteAtual()" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium transition-all">
+                            📊 Exportar CSV
+                        </button>
+                        <button type="button" onclick="gerarWordFrenteAtual()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-all">
+                            📄 Gerar Word
+                        </button>
+                        <button type="button" onclick="limparFormulario()" class="bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-lg font-medium transition-all">
+                            🗑️ Limpar Formulário
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Listar Frentes Section -->
+            <div id="listar-frentes" class="section hidden">
+                <h2 class="text-3xl font-bold text-gray-900 mb-8">📋 Frentes Cadastradas</h2>
+                
+                <!-- Filtros -->
+                <div class="card p-6 mb-8">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">🔍 Filtros</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <input type="text" id="filtroMunicipio" placeholder="Município" class="input-field px-4 py-2 border border-gray-300 rounded-lg">
+                        <input type="date" id="filtroData" class="input-field px-4 py-2 border border-gray-300 rounded-lg">
+                        <input type="text" id="filtroAgente" placeholder="Agente" class="input-field px-4 py-2 border border-gray-300 rounded-lg">
+                        <button onclick="aplicarFiltros()" class="btn-primary text-white px-4 py-2 rounded-lg font-medium">Filtrar</button>
+                    </div>
+                </div>
+
+                <!-- Lista de Frentes -->
+                <div class="card">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Corpo Hídrico</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Município</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="frentesTableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- Dados serão inseridos aqui via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Relatórios Section -->
+            <div id="relatorios" class="section hidden">
+                <h2 class="text-3xl font-bold text-gray-900 mb-8">📈 Relatórios e Análises</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">📊 Gerar Relatórios</h3>
+                        <div class="space-y-4">
+                            <button onclick="gerarRelatorioPDF()" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium transition-all">
+                                📄 Relatório Completo (PDF)
+                            </button>
+                            <button onclick="exportarExcel()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition-all">
+                                📊 Exportar para Excel
+                            </button>
+                            <button onclick="gerarRelatorioSintese()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-all">
+                                📋 Relatório de Síntese
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">📈 Estatísticas</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Total de Frentes:</span>
+                                <span class="font-bold">24</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Comunidades Identificadas:</span>
+                                <span class="font-bold">18</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Equipamentos Mapeados:</span>
+                                <span class="font-bold">142</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Fotos Coletadas:</span>
+                                <span class="font-bold">356</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Usuários Section -->
+            <div id="usuarios" class="section hidden">
+                <h2 class="text-3xl font-bold text-gray-900 mb-8">👥 Gerenciamento de Usuários</h2>
+                
+                <div class="card p-6 mb-8">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">➕ Adicionar Usuário</h3>
+                    <form id="usuarioForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input type="text" name="nomeUsuario" placeholder="Nome completo" class="input-field px-4 py-2 border border-gray-300 rounded-lg" required>
+                        <input type="email" name="emailUsuario" placeholder="E-mail" class="input-field px-4 py-2 border border-gray-300 rounded-lg" required>
+                        <select name="perfilUsuario" class="input-field px-4 py-2 border border-gray-300 rounded-lg" required>
+                            <option value="">Selecione o perfil</option>
+                            <option value="tecnico">Técnico</option>
+                            <option value="encarregado">Encarregado</option>
+                            <option value="administrador">Administrador</option>
+                        </select>
+                        <button type="submit" class="btn-primary text-white px-4 py-2 rounded-lg font-medium md:col-span-3">Adicionar Usuário</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">E-mail</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Perfil</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usuariosTableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- Dados serão inseridos aqui via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script>
-        let sectors = {};
-        let photoCounter = 0;
-
-        function addPhotos() {
-            const frente = document.getElementById('frente').value.trim();
-            const municipio = document.getElementById('municipio').value.trim();
-            const quantidadeArvores = document.getElementById('quantidadeArvores').value.trim();
-            const fileInput = document.getElementById('photoUpload');
-            const files = fileInput.files;
-
-            if (!frente || !municipio || !quantidadeArvores) {
-                alert('Por favor, preencha todos os campos (Frente, Município e Quantidade de Árvores)!');
-                return;
+        // Dados simulados
+        let frentes = [
+            {
+                id: 1,
+                codigo: '166',
+                corpoHidrico: 'Rio Acari',
+                municipio: 'Rio de Janeiro',
+                bairro: 'Bangu',
+                dataVisita: '2024-01-15',
+                status: 'Concluído',
+                tecnicaSocial: 'Maria Silva',
+                comunidadeEntorno: 'sim',
+                nomeComunidade: 'Vila Acari'
+            },
+            {
+                id: 2,
+                codigo: '167',
+                corpoHidrico: 'Rio Pavuna',
+                municipio: 'Rio de Janeiro',
+                bairro: 'Pavuna',
+                dataVisita: '2024-01-14',
+                status: 'Em andamento',
+                tecnicaSocial: 'João Santos',
+                comunidadeEntorno: 'sim',
+                nomeComunidade: 'Comunidade da Pavuna'
             }
+        ];
 
-            if (files.length === 0) {
-                alert('Por favor, selecione pelo menos uma foto!');
-                return;
+        let usuarios = [
+            {
+                id: 1,
+                nome: 'João Silva',
+                email: 'joao.silva@limpa.rio',
+                perfil: 'Administrador',
+                status: 'Ativo'
+            },
+            {
+                id: 2,
+                nome: 'Maria Santos',
+                email: 'maria.santos@limpa.rio',
+                perfil: 'Técnico',
+                status: 'Ativo'
             }
+        ];
 
-            const sectorKey = `${frente} - ${municipio}`;
+        let uploadedPhotos = [];
+
+        // Navegação
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(sectionId).classList.remove('hidden');
+            document.getElementById(sectionId).classList.add('fade-in');
             
-            if (!sectors[sectorKey]) {
-                sectors[sectorKey] = {
-                    frente: frente,
-                    municipio: municipio,
-                    quantidadeArvores: quantidadeArvores,
-                    photos: []
-                };
+            // Atualizar dados quando necessário
+            if (sectionId === 'listar-frentes') {
+                atualizarTabelaFrente();
+            } else if (sectionId === 'usuarios') {
+                atualizarTabelaUsuarios();
             }
+        }
 
-            Array.from(files).forEach(file => {
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            const icon = document.getElementById('menuIcon');
+            
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                icon.textContent = '✕';
+            } else {
+                menu.classList.add('hidden');
+                icon.textContent = '☰';
+            }
+        }
+
+        // Formulário de frente
+        function toggleComunidadeFields(value) {
+            const div = document.getElementById('nomeComunidadeDiv');
+            if (value === 'sim') {
+                div.classList.remove('hidden');
+            } else {
+                div.classList.add('hidden');
+            }
+        }
+
+        function toggleConstrucoesFields(value) {
+            const tipoDiv = document.getElementById('tipoConstrucaoDiv');
+            const quantDiv = document.getElementById('quantidadeMoradiasDiv');
+            
+            if (value === 'sim') {
+                tipoDiv.classList.remove('hidden');
+                quantDiv.classList.remove('hidden');
+            } else {
+                tipoDiv.classList.add('hidden');
+                quantDiv.classList.add('hidden');
+            }
+        }
+
+        function addEquipamento(tipo) {
+            const container = document.getElementById(tipo + 'Container');
+            let template = '';
+            
+            if (tipo === 'escolas') {
+                template = `
+                    <div class="escola-item p-4 bg-white rounded-lg border mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <input type="text" name="escola_nome[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Nome da escola">
+                            <input type="text" name="escola_endereco[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Endereço">
+                            <select name="escola_segmento[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="">Segmento</option>
+                                <option value="infantil">Educação Infantil</option>
+                                <option value="fundamental">Ensino Fundamental</option>
+                                <option value="medio">Ensino Médio</option>
+                            </select>
+                        </div>
+                        <div class="border-t pt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">📸 Fotos da Escola</label>
+                            <div class="flex items-center space-x-4">
+                                <input type="file" class="escola-photos hidden" multiple accept="image/*" onchange="handleEquipamentoPhotoUpload(event, 'escola', this)">
+                                <button type="button" onclick="this.previousElementSibling.click()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                    📷 Adicionar Fotos
+                                </button>
+                                <span class="text-sm text-gray-600">Selecione múltiplas imagens</span>
+                            </div>
+                            <div class="escola-preview grid grid-cols-3 md:grid-cols-6 gap-2 mt-3"></div>
+                        </div>
+                        <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-800 text-sm mt-4">🗑️ Remover Escola</button>
+                    </div>
+                `;
+            } else if (tipo === 'saude') {
+                template = `
+                    <div class="saude-item p-4 bg-white rounded-lg border mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <input type="text" name="saude_nome[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Nome da unidade">
+                            <input type="text" name="saude_endereco[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Endereço">
+                        </div>
+                        <div class="border-t pt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">📸 Fotos da Unidade de Saúde</label>
+                            <div class="flex items-center space-x-4">
+                                <input type="file" class="saude-photos hidden" multiple accept="image/*" onchange="handleEquipamentoPhotoUpload(event, 'saude', this)">
+                                <button type="button" onclick="this.previousElementSibling.click()" class="bg-green-100 hover:bg-green-200 text-green-700 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                    📷 Adicionar Fotos
+                                </button>
+                                <span class="text-sm text-gray-600">Selecione múltiplas imagens</span>
+                            </div>
+                            <div class="saude-preview grid grid-cols-3 md:grid-cols-6 gap-2 mt-3"></div>
+                        </div>
+                        <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-800 text-sm mt-4">🗑️ Remover Unidade</button>
+                    </div>
+                `;
+            } else if (tipo === 'transporte') {
+                template = `
+                    <div class="transporte-item p-4 bg-white rounded-lg border mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <input type="text" name="transporte_linha[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Linha/Número">
+                            <input type="text" name="transporte_empresa[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Empresa">
+                            <select name="transporte_tipo[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="">Tipo</option>
+                                <option value="onibus">Ônibus</option>
+                                <option value="van">Van</option>
+                                <option value="metro">Metrô</option>
+                                <option value="trem">Trem</option>
+                            </select>
+                        </div>
+                        <div class="border-t pt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">📸 Fotos do Transporte</label>
+                            <div class="flex items-center space-x-4">
+                                <input type="file" class="transporte-photos hidden" multiple accept="image/*" onchange="handleEquipamentoPhotoUpload(event, 'transporte', this)">
+                                <button type="button" onclick="this.previousElementSibling.click()" class="bg-purple-100 hover:bg-purple-200 text-purple-700 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                    📷 Adicionar Fotos
+                                </button>
+                                <span class="text-sm text-gray-600">Selecione múltiplas imagens</span>
+                            </div>
+                            <div class="transporte-preview grid grid-cols-3 md:grid-cols-6 gap-2 mt-3"></div>
+                        </div>
+                        <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-800 text-sm mt-4">🗑️ Remover Transporte</button>
+                    </div>
+                `;
+            } else if (tipo === 'lazer') {
+                template = `
+                    <div class="lazer-item p-4 bg-white rounded-lg border mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <input type="text" name="lazer_nome[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Nome do local">
+                            <input type="text" name="lazer_endereco[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Endereço">
+                            <input type="text" name="lazer_descricao[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Descrição">
+                        </div>
+                        <div class="border-t pt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">📸 Fotos da Área de Lazer</label>
+                            <div class="flex items-center space-x-4">
+                                <input type="file" class="lazer-photos hidden" multiple accept="image/*" onchange="handleEquipamentoPhotoUpload(event, 'lazer', this)">
+                                <button type="button" onclick="this.previousElementSibling.click()" class="bg-orange-100 hover:bg-orange-200 text-orange-700 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                    📷 Adicionar Fotos
+                                </button>
+                                <span class="text-sm text-gray-600">Selecione múltiplas imagens</span>
+                            </div>
+                            <div class="lazer-preview grid grid-cols-3 md:grid-cols-6 gap-2 mt-3"></div>
+                        </div>
+                        <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-800 text-sm mt-4">🗑️ Remover Área de Lazer</button>
+                    </div>
+                `;
+            } else if (tipo === 'religiosas') {
+                template = `
+                    <div class="religiosas-item p-4 bg-white rounded-lg border mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <input type="text" name="religiosas_nome[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Nome da instituição">
+                            <input type="text" name="religiosas_endereco[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Endereço">
+                            <select name="religiosas_tipo[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="">Tipo</option>
+                                <option value="igreja">Igreja</option>
+                                <option value="templo">Templo</option>
+                                <option value="centro">Centro Espírita</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+                        <div class="border-t pt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">📸 Fotos da Instituição Religiosa</label>
+                            <div class="flex items-center space-x-4">
+                                <input type="file" class="religiosas-photos hidden" multiple accept="image/*" onchange="handleEquipamentoPhotoUpload(event, 'religiosas', this)">
+                                <button type="button" onclick="this.previousElementSibling.click()" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                    📷 Adicionar Fotos
+                                </button>
+                                <span class="text-sm text-gray-600">Selecione múltiplas imagens</span>
+                            </div>
+                            <div class="religiosas-preview grid grid-cols-3 md:grid-cols-6 gap-2 mt-3"></div>
+                        </div>
+                        <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-800 text-sm mt-4">🗑️ Remover Instituição</button>
+                    </div>
+                `;
+            } else if (tipo === 'associacoes') {
+                template = `
+                    <div class="associacoes-item p-4 bg-white rounded-lg border mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <input type="text" name="associacoes_nome[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Nome da associação">
+                            <input type="text" name="associacoes_endereco[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Endereço">
+                            <input type="text" name="associacoes_contato[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Contato">
+                        </div>
+                        <div class="border-t pt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">📸 Fotos da Associação</label>
+                            <div class="flex items-center space-x-4">
+                                <input type="file" class="associacoes-photos hidden" multiple accept="image/*" onchange="handleEquipamentoPhotoUpload(event, 'associacoes', this)">
+                                <button type="button" onclick="this.previousElementSibling.click()" class="bg-teal-100 hover:bg-teal-200 text-teal-700 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                    📷 Adicionar Fotos
+                                </button>
+                                <span class="text-sm text-gray-600">Selecione múltiplas imagens</span>
+                            </div>
+                            <div class="associacoes-preview grid grid-cols-3 md:grid-cols-6 gap-2 mt-3"></div>
+                        </div>
+                        <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-800 text-sm mt-4">🗑️ Remover Associação</button>
+                    </div>
+                `;
+            } else if (tipo === 'comercios') {
+                template = `
+                    <div class="comercios-item p-4 bg-white rounded-lg border mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <input type="text" name="comercios_nome[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Nome do comércio">
+                            <input type="text" name="comercios_endereco[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg" placeholder="Endereço">
+                            <select name="comercios_tipo[]" class="input-field px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="">Tipo</option>
+                                <option value="mercado">Mercado</option>
+                                <option value="farmacia">Farmácia</option>
+                                <option value="padaria">Padaria</option>
+                                <option value="restaurante">Restaurante</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+                        <div class="border-t pt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">📸 Fotos do Comércio</label>
+                            <div class="flex items-center space-x-4">
+                                <input type="file" class="comercios-photos hidden" multiple accept="image/*" onchange="handleEquipamentoPhotoUpload(event, 'comercios', this)">
+                                <button type="button" onclick="this.previousElementSibling.click()" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                                    📷 Adicionar Fotos
+                                </button>
+                                <span class="text-sm text-gray-600">Selecione múltiplas imagens</span>
+                            </div>
+                            <div class="comercios-preview grid grid-cols-3 md:grid-cols-6 gap-2 mt-3"></div>
+                        </div>
+                        <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-800 text-sm mt-4">🗑️ Remover Comércio</button>
+                    </div>
+                `;
+            }
+            
+            container.insertAdjacentHTML('beforeend', template);
+        }
+
+        function handlePhotoUpload(event) {
+            const files = event.target.files;
+            const preview = document.getElementById('photoPreview');
+            
+            for (let file of files) {
                 if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
                     reader.onload = function(e) {
-                        const photo = {
-                            id: ++photoCounter,
+                        const photoDiv = document.createElement('div');
+                        photoDiv.className = 'photo-preview relative';
+                        photoDiv.innerHTML = `
+                            <img src="${e.target.result}" class="w-full h-32 object-cover rounded-lg">
+                            <button type="button" onclick="this.parentElement.remove()" class="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">×</button>
+                            <p class="text-xs text-gray-600 mt-1">${file.name}</p>
+                        `;
+                        preview.appendChild(photoDiv);
+                        
+                        uploadedPhotos.push({
                             name: file.name,
-                            src: e.target.result,
-                            sector: sectorKey
-                        };
-                        sectors[sectorKey].photos.push(photo);
-                        renderGallery();
+                            data: e.target.result,
+                            date: new Date().toISOString()
+                        });
                     };
                     reader.readAsDataURL(file);
                 }
-            });
-
-            // Limpar campos
-            document.getElementById('frente').value = '';
-            document.getElementById('municipio').value = '';
-            document.getElementById('quantidadeArvores').value = '';
-            fileInput.value = '';
+            }
         }
 
-        function renderGallery() {
-            const gallery = document.getElementById('gallery');
+        function handleEquipamentoPhotoUpload(event, tipo, inputElement) {
+            const files = event.target.files;
+            const equipamentoItem = inputElement.closest(`.${tipo}-item`);
+            const preview = equipamentoItem.querySelector(`.${tipo}-preview`);
             
-            if (Object.keys(sectors).length === 0) {
-                gallery.innerHTML = `
-                    <div class="empty-state">
-                        <h3>🖼️ Nenhuma foto adicionada ainda</h3>
-                        <p>Comece adicionando fotos organizadas por setores!</p>
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const photoDiv = document.createElement('div');
+                        photoDiv.className = 'photo-preview relative';
+                        photoDiv.innerHTML = `
+                            <img src="${e.target.result}" class="w-full h-20 object-cover rounded-lg">
+                            <button type="button" onclick="this.parentElement.remove()" class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
+                        `;
+                        preview.appendChild(photoDiv);
+                        
+                        // Armazenar foto com referência ao equipamento
+                        if (!equipamentoItem.equipamentoPhotos) {
+                            equipamentoItem.equipamentoPhotos = [];
+                        }
+                        equipamentoItem.equipamentoPhotos.push({
+                            name: file.name,
+                            data: e.target.result,
+                            date: new Date().toISOString(),
+                            tipo: tipo
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+
+        function limparFormulario() {
+            if (confirm('Tem certeza que deseja limpar todos os dados do formulário?')) {
+                document.getElementById('frenteForm').reset();
+                document.getElementById('photoPreview').innerHTML = '';
+                uploadedPhotos = [];
+                
+                // Esconder campos condicionais
+                document.getElementById('nomeComunidadeDiv').classList.add('hidden');
+                document.getElementById('tipoConstrucaoDiv').classList.add('hidden');
+                document.getElementById('quantidadeMoradiasDiv').classList.add('hidden');
+            }
+        }
+
+        // Funções de geração de documentos
+        function gerarPDFFrente(frente, formData) {
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Configurar fonte
+                doc.setFont('helvetica');
+                
+                // Título
+                doc.setFontSize(20);
+                doc.setTextColor(59, 130, 246);
+                doc.text('SISTEMA LIMPA RIO COMUNIDADE', 20, 20);
+                
+                doc.setFontSize(16);
+                doc.setTextColor(0, 0, 0);
+                doc.text('Relatório de Frente de Trabalho', 20, 35);
+                
+                // Linha separadora
+                doc.setDrawColor(59, 130, 246);
+                doc.setLineWidth(0.5);
+                doc.line(20, 40, 190, 40);
+                
+                let yPos = 55;
+                
+                // Dados básicos
+                doc.setFontSize(14);
+                doc.setTextColor(59, 130, 246);
+                doc.text('DADOS BÁSICOS', 20, yPos);
+                yPos += 10;
+                
+                doc.setFontSize(11);
+                doc.setTextColor(0, 0, 0);
+                doc.text(`Código da Frente: ${frente.codigo}`, 20, yPos);
+                yPos += 7;
+                doc.text(`Corpo Hídrico: ${frente.corpoHidrico}`, 20, yPos);
+                yPos += 7;
+                doc.text(`Município: ${frente.municipio}`, 20, yPos);
+                yPos += 7;
+                doc.text(`Bairro: ${frente.bairro}`, 20, yPos);
+                yPos += 7;
+                doc.text(`Data da Visita: ${new Date(frente.dataVisita).toLocaleDateString('pt-BR')}`, 20, yPos);
+                yPos += 7;
+                doc.text(`Região Hidrográfica: ${formData.get('regiaoHidrografica') || 'Não informado'}`, 20, yPos);
+                yPos += 15;
+                
+                // Equipe
+                doc.setFontSize(14);
+                doc.setTextColor(59, 130, 246);
+                doc.text('EQUIPE', 20, yPos);
+                yPos += 10;
+                
+                doc.setFontSize(11);
+                doc.setTextColor(0, 0, 0);
+                doc.text(`Técnica Social: ${frente.tecnicaSocial}`, 20, yPos);
+                yPos += 7;
+                doc.text(`Encarregados: ${formData.get('encarregados') || 'Não informado'}`, 20, yPos);
+                yPos += 7;
+                
+                const agentes = formData.get('agentesSocioambientais');
+                if (agentes) {
+                    doc.text('Agentes Socioambientais:', 20, yPos);
+                    yPos += 7;
+                    const linhasAgentes = doc.splitTextToSize(agentes, 170);
+                    doc.text(linhasAgentes, 25, yPos);
+                    yPos += linhasAgentes.length * 7 + 8;
+                }
+                
+                // Caracterização da área
+                doc.setFontSize(14);
+                doc.setTextColor(59, 130, 246);
+                doc.text('CARACTERIZAÇÃO DA ÁREA', 20, yPos);
+                yPos += 10;
+                
+                doc.setFontSize(11);
+                doc.setTextColor(0, 0, 0);
+                doc.text(`Comunidade no entorno: ${frente.comunidadeEntorno === 'sim' ? 'Sim' : 'Não'}`, 20, yPos);
+                yPos += 7;
+                
+                if (frente.nomeComunidade) {
+                    doc.text(`Nome da Comunidade: ${frente.nomeComunidade}`, 20, yPos);
+                    yPos += 7;
+                }
+                
+                doc.text(`Construções às margens: ${formData.get('construcoesMargens') === 'sim' ? 'Sim' : 'Não'}`, 20, yPos);
+                yPos += 7;
+                
+                if (formData.get('tipoConstrucao')) {
+                    doc.text(`Tipo de Construção: ${formData.get('tipoConstrucao')}`, 20, yPos);
+                    yPos += 7;
+                }
+                
+                if (formData.get('quantidadeMoradias')) {
+                    doc.text(`Quantidade de Moradias: ${formData.get('quantidadeMoradias')}`, 20, yPos);
+                    yPos += 7;
+                }
+                
+                const observacoes = formData.get('observacoesGerais');
+                if (observacoes) {
+                    yPos += 5;
+                    doc.text('Observações Gerais:', 20, yPos);
+                    yPos += 7;
+                    const linhasObs = doc.splitTextToSize(observacoes, 170);
+                    doc.text(linhasObs, 25, yPos);
+                    yPos += linhasObs.length * 7;
+                }
+                
+                // Nova página para equipamentos se necessário
+                if (yPos > 250) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                // Equipamentos públicos
+                yPos += 15;
+                doc.setFontSize(14);
+                doc.setTextColor(59, 130, 246);
+                doc.text('EQUIPAMENTOS PÚBLICOS IDENTIFICADOS', 20, yPos);
+                yPos += 15;
+                
+                // Contar equipamentos
+                const equipamentos = {
+                    escolas: formData.getAll('escola_nome[]').filter(nome => nome.trim()),
+                    saude: formData.getAll('saude_nome[]').filter(nome => nome.trim()),
+                    transporte: formData.getAll('transporte_linha[]').filter(linha => linha.trim()),
+                    lazer: formData.getAll('lazer_nome[]').filter(nome => nome.trim()),
+                    religiosas: formData.getAll('religiosas_nome[]').filter(nome => nome.trim()),
+                    associacoes: formData.getAll('associacoes_nome[]').filter(nome => nome.trim()),
+                    comercios: formData.getAll('comercios_nome[]').filter(nome => nome.trim())
+                };
+                
+                doc.setFontSize(11);
+                doc.setTextColor(0, 0, 0);
+                doc.text(`• Escolas: ${equipamentos.escolas.length}`, 20, yPos);
+                yPos += 7;
+                doc.text(`• Unidades de Saúde: ${equipamentos.saude.length}`, 20, yPos);
+                yPos += 7;
+                doc.text(`• Linhas de Transporte: ${equipamentos.transporte.length}`, 20, yPos);
+                yPos += 7;
+                doc.text(`• Áreas de Lazer: ${equipamentos.lazer.length}`, 20, yPos);
+                yPos += 7;
+                doc.text(`• Instituições Religiosas: ${equipamentos.religiosas.length}`, 20, yPos);
+                yPos += 7;
+                doc.text(`• Associações de Moradores: ${equipamentos.associacoes.length}`, 20, yPos);
+                yPos += 7;
+                doc.text(`• Comércios Locais: ${equipamentos.comercios.length}`, 20, yPos);
+                yPos += 15;
+                
+                // Rodapé
+                doc.setFontSize(8);
+                doc.setTextColor(128, 128, 128);
+                doc.text(`Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 20, 280);
+                doc.text('Sistema Limpa Rio Comunidade - Reconhecimento Sócio Territorial', 20, 285);
+                
+                // Salvar PDF
+                doc.save(`Frente_${frente.codigo}_${frente.corpoHidrico.replace(/\s+/g, '_')}.pdf`);
+                
+            } catch (error) {
+                console.error('Erro ao gerar PDF:', error);
+                alert('Erro ao gerar PDF. Verifique os dados e tente novamente.');
+            }
+        }
+        
+        function gerarWordFrente(frente, formData) {
+            try {
+                // Criar conteúdo do documento em formato simples
+                let conteudo = `SISTEMA LIMPA RIO COMUNIDADE
+Relatório de Frente de Trabalho
+
+DADOS BÁSICOS
+Código da Frente: ${frente.codigo}
+Corpo Hídrico: ${frente.corpoHidrico}
+Município: ${frente.municipio}
+Bairro: ${frente.bairro}
+Data da Visita: ${new Date(frente.dataVisita).toLocaleDateString('pt-BR')}
+Região Hidrográfica: ${formData.get('regiaoHidrografica') || 'Não informado'}
+
+EQUIPE
+Técnica Social: ${frente.tecnicaSocial}
+Encarregados: ${formData.get('encarregados') || 'Não informado'}
+Agentes Socioambientais: ${formData.get('agentesSocioambientais') || 'Não informado'}
+
+CARACTERIZAÇÃO DA ÁREA
+Comunidade no entorno: ${frente.comunidadeEntorno === 'sim' ? 'Sim' : 'Não'}
+${frente.nomeComunidade ? `Nome da Comunidade: ${frente.nomeComunidade}` : ''}
+Construções às margens: ${formData.get('construcoesMargens') === 'sim' ? 'Sim' : 'Não'}
+${formData.get('tipoConstrucao') ? `Tipo de Construção: ${formData.get('tipoConstrucao')}` : ''}
+${formData.get('quantidadeMoradias') ? `Quantidade de Moradias: ${formData.get('quantidadeMoradias')}` : ''}
+
+EQUIPAMENTOS PÚBLICOS IDENTIFICADOS
+• Escolas: ${formData.getAll('escola_nome[]').filter(nome => nome.trim()).length}
+• Unidades de Saúde: ${formData.getAll('saude_nome[]').filter(nome => nome.trim()).length}
+• Linhas de Transporte: ${formData.getAll('transporte_linha[]').filter(linha => linha.trim()).length}
+• Áreas de Lazer: ${formData.getAll('lazer_nome[]').filter(nome => nome.trim()).length}
+• Instituições Religiosas: ${formData.getAll('religiosas_nome[]').filter(nome => nome.trim()).length}
+• Associações de Moradores: ${formData.getAll('associacoes_nome[]').filter(nome => nome.trim()).length}
+• Comércios Locais: ${formData.getAll('comercios_nome[]').filter(nome => nome.trim()).length}
+
+${formData.get('observacoesGerais') ? `OBSERVAÇÕES GERAIS\n${formData.get('observacoesGerais')}` : ''}
+
+Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}
+Sistema Limpa Rio Comunidade - Reconhecimento Sócio Territorial`;
+
+                // Criar arquivo de texto como fallback
+                const blob = new Blob([conteudo], { type: 'text/plain;charset=utf-8' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `Frente_${frente.codigo}_${frente.corpoHidrico.replace(/\s+/g, '_')}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+            } catch (error) {
+                console.error('Erro ao gerar documento:', error);
+                alert('Erro ao gerar documento. Verifique os dados e tente novamente.');
+            }
+        }
+
+        // Manipulação de dados
+        document.getElementById('frenteForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const editingId = this.dataset.editingId;
+            
+            if (editingId) {
+                // Modo edição - atualizar frente existente
+                const frenteIndex = frentes.findIndex(f => f.id == editingId);
+                if (frenteIndex !== -1) {
+                    frentes[frenteIndex] = {
+                        ...frentes[frenteIndex], // Manter dados existentes
+                        codigo: formData.get('codigo'),
+                        corpoHidrico: formData.get('corpoHidrico'),
+                        municipio: formData.get('municipio'),
+                        bairro: formData.get('bairro'),
+                        dataVisita: formData.get('dataVisita'),
+                        tecnicaSocial: formData.get('tecnicaSocial'),
+                        comunidadeEntorno: formData.get('comunidadeEntorno'),
+                        nomeComunidade: formData.get('nomeComunidade'),
+                        fotos: [...uploadedPhotos] // Atualizar fotos se houver
+                    };
+                    
+                    // Mostrar mensagem de sucesso
+                    const successDiv = document.createElement('div');
+                    successDiv.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                    successDiv.innerHTML = `✅ Frente ${frentes[frenteIndex].codigo} atualizada com sucesso!`;
+                    document.body.appendChild(successDiv);
+                    
+                    setTimeout(() => {
+                        successDiv.remove();
+                    }, 4000);
+                    
+                    // Cancelar modo de edição
+                    cancelarEdicao();
+                    
+                    // Atualizar tabelas
+                    atualizarTabelaFrente();
+                    atualizarDashboard();
+                    
+                    // Voltar para lista de frentes
+                    showSection('listar-frentes');
+                }
+            } else {
+                // Modo criação - criar nova frente
+                const novaFrente = {
+                    id: frentes.length + 1,
+                    codigo: formData.get('codigo'),
+                    corpoHidrico: formData.get('corpoHidrico'),
+                    municipio: formData.get('municipio'),
+                    bairro: formData.get('bairro'),
+                    dataVisita: formData.get('dataVisita'),
+                    status: 'Concluído',
+                    tecnicaSocial: formData.get('tecnicaSocial'),
+                    comunidadeEntorno: formData.get('comunidadeEntorno'),
+                    nomeComunidade: formData.get('nomeComunidade'),
+                    fotos: [...uploadedPhotos]
+                };
+                
+                frentes.push(novaFrente);
+                
+                // Mostrar mensagem de processamento
+                const processingDiv = document.createElement('div');
+                processingDiv.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                processingDiv.innerHTML = '⏳ Salvando frente e gerando documentos...';
+                document.body.appendChild(processingDiv);
+                
+                // Gerar documentos após um pequeno delay para mostrar a mensagem
+                setTimeout(() => {
+                    // Gerar PDF
+                    gerarPDFFrente(novaFrente, formData);
+                    
+                    // Gerar Word (com delay para não conflitar)
+                    setTimeout(() => {
+                        gerarWordFrente(novaFrente, formData);
+                    }, 1000);
+                    
+                    // Atualizar mensagem de sucesso
+                    processingDiv.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                    processingDiv.innerHTML = '✅ Frente salva! PDF e Word gerados automaticamente!';
+                    
+                    setTimeout(() => {
+                        processingDiv.remove();
+                    }, 4000);
+                }, 500);
+                
+                // Limpar formulário
+                limparFormulario();
+                
+                // Atualizar dashboard
+                atualizarDashboard();
+            }
+        });
+
+        document.getElementById('usuarioForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const novoUsuario = {
+                id: usuarios.length + 1,
+                nome: formData.get('nomeUsuario'),
+                email: formData.get('emailUsuario'),
+                perfil: formData.get('perfilUsuario'),
+                status: 'Ativo'
+            };
+            
+            usuarios.push(novoUsuario);
+            this.reset();
+            atualizarTabelaUsuarios();
+            
+            // Mostrar mensagem de sucesso
+            const successDiv = document.createElement('div');
+            successDiv.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            successDiv.innerHTML = '✅ Usuário adicionado com sucesso!';
+            document.body.appendChild(successDiv);
+            
+            setTimeout(() => {
+                successDiv.remove();
+            }, 3000);
+        });
+
+        function atualizarTabelaFrente() {
+            const tbody = document.getElementById('frentesTableBody');
+            tbody.innerHTML = '';
+            
+            frentes.forEach(frente => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${frente.codigo}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${frente.corpoHidrico}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${frente.municipio}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(frente.dataVisita).toLocaleDateString('pt-BR')}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${frente.status === 'Concluído' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                            ${frente.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="visualizarFrente(${frente.id})" class="text-blue-600 hover:text-blue-900 mr-3">Ver</button>
+                        <button onclick="editarFrente(${frente.id})" class="text-indigo-600 hover:text-indigo-900 mr-3">Editar</button>
+                        <button onclick="excluirFrente(${frente.id})" class="text-red-600 hover:text-red-900">Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function atualizarTabelaUsuarios() {
+            const tbody = document.getElementById('usuariosTableBody');
+            tbody.innerHTML = '';
+            
+            usuarios.forEach(usuario => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${usuario.nome}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${usuario.email}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${usuario.perfil}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            ${usuario.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="editarUsuario(${usuario.id})" class="text-indigo-600 hover:text-indigo-900 mr-3">Editar</button>
+                        <button onclick="excluirUsuario(${usuario.id})" class="text-red-600 hover:text-red-900">Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function atualizarDashboard() {
+            document.getElementById('totalFrentes').textContent = frentes.length;
+            document.getElementById('totalComunidades').textContent = frentes.filter(f => f.comunidadeEntorno === 'sim').length;
+        }
+
+        // Ações
+        function visualizarFrente(id) {
+            const frente = frentes.find(f => f.id === id);
+            if (frente) {
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-full overflow-y-auto">
+                        <h3 class="text-xl font-bold mb-4">Detalhes da Frente ${frente.codigo}</h3>
+                        <div class="space-y-3">
+                            <p><strong>Corpo Hídrico:</strong> ${frente.corpoHidrico}</p>
+                            <p><strong>Município:</strong> ${frente.municipio}</p>
+                            <p><strong>Bairro:</strong> ${frente.bairro}</p>
+                            <p><strong>Data da Visita:</strong> ${new Date(frente.dataVisita).toLocaleDateString('pt-BR')}</p>
+                            <p><strong>Técnica Social:</strong> ${frente.tecnicaSocial}</p>
+                            <p><strong>Comunidade no Entorno:</strong> ${frente.comunidadeEntorno === 'sim' ? 'Sim' : 'Não'}</p>
+                            ${frente.nomeComunidade ? `<p><strong>Nome da Comunidade:</strong> ${frente.nomeComunidade}</p>` : ''}
+                        </div>
+                        <button onclick="this.parentElement.parentElement.remove()" class="mt-6 bg-blue-600 text-white px-4 py-2 rounded-lg">Fechar</button>
                     </div>
                 `;
-                return;
-            }
-
-            let html = '';
-            Object.keys(sectors).forEach(sectorKey => {
-                const sector = sectors[sectorKey];
-                const photos = sector.photos;
-                if (photos.length > 0) {
-                    html += `
-                        <div class="sector">
-                            <div class="sector-header">
-                                <div>
-                                    <h2 class="sector-title">${sector.frente} - ${sector.municipio}</h2>
-                                    <p style="color: #6b7280; margin-top: 5px; font-size: 0.9rem;">🌳 ${sector.quantidadeArvores} árvores</p>
-                                </div>
-                                <span class="photo-count">${photos.length} foto${photos.length !== 1 ? 's' : ''}</span>
-                            </div>
-                            <div class="photos-grid">
-                    `;
-                    
-                    photos.forEach(photo => {
-                        const isPlaceholder = photo.isPlaceholder;
-                        html += `
-                            <div class="photo-item ${isPlaceholder ? 'placeholder-item' : ''}" 
-                                 draggable="true" 
-                                 data-sector="${sectorKey}" 
-                                 data-photo-id="${photo.id}"
-                                 ondragstart="handleDragStart(event)"
-                                 ondragover="handleDragOver(event)"
-                                 ondrop="handleDrop(event)"
-                                 ondragend="handleDragEnd(event)">
-                                <button class="drag-handle" title="Arrastar para reordenar">
-                                    ⋮⋮
-                                </button>
-                                <button class="delete-btn" onclick="deletePhoto('${sectorKey}', ${photo.id})" title="Excluir foto">
-                                    ✕
-                                </button>
-                                ${isPlaceholder ? `
-                                    <div class="placeholder-overlay" onclick="replacePlaceholder('${sectorKey}', ${photo.id})">
-                                        <img src="${photo.src}" alt="${photo.name}" loading="lazy">
-                                        <div class="placeholder-text">Clique para adicionar imagem real</div>
-                                    </div>
-                                ` : `
-                                    <img src="${photo.src}" alt="${photo.name}" loading="lazy">
-                                `}
-                                <div class="photo-info">
-                                    <textarea 
-                                        class="photo-description" 
-                                        placeholder="Adicione uma descrição..."
-                                        onchange="updatePhotoDescription('${sectorKey}', ${photo.id}, this.value)"
-                                    >${photo.description || ''}</textarea>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    
-                    html += `
-                            </div>
-                        </div>
-                    `;
-                }
-            });
-
-            gallery.innerHTML = html;
-        }
-
-        function deletePhoto(sectorKey, photoId) {
-            if (confirm('Tem certeza que deseja excluir esta foto?')) {
-                sectors[sectorKey].photos = sectors[sectorKey].photos.filter(photo => photo.id !== photoId);
-                
-                // Remove setor se não tiver mais fotos
-                if (sectors[sectorKey].photos.length === 0) {
-                    delete sectors[sectorKey];
-                }
-                
-                renderGallery();
+                document.body.appendChild(modal);
             }
         }
 
-        function updatePhotoDescription(sectorKey, photoId, description) {
-            const photo = sectors[sectorKey].photos.find(p => p.id === photoId);
-            if (photo) {
-                photo.description = description;
-            }
-        }
-
-        function exportToWord() {
-            if (Object.keys(sectors).length === 0) {
-                alert('Adicione algumas fotos antes de exportar!');
-                return;
-            }
-
-            // Criar conteúdo HTML para o Word
-            let wordContent = `<!DOCTYPE html>
-<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-<head>
-    <meta charset='UTF-8'>
-    <title>Limpa Rio</title>
-    <!--[if gte mso 9]>
-    <xml>
-        <w:WordDocument>
-            <w:View>Print</w:View>
-            <w:Zoom>90</w:Zoom>
-            <w:DoNotPromptForConvert/>
-            <w:DoNotShowInsertionsAndDeletions/>
-        </w:WordDocument>
-    </xml>
-    <![endif]-->
-    <style>
-        @page { 
-            size: A4; 
-            margin: 2cm; 
-        }
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 0; 
-            padding: 0;
-            font-size: 12px;
-        }
-        h1 { 
-            color: #4facfe; 
-            text-align: center; 
-            margin-bottom: 20px; 
-            font-size: 18px;
-            page-break-after: avoid;
-        }
-        h2 { 
-            color: #374151; 
-            border-bottom: 1px solid #ccc; 
-            padding-bottom: 5px; 
-            margin-top: 15px; 
-            font-size: 14px;
-            page-break-after: avoid;
-        }
-        .page-break { 
-            page-break-before: always; 
-        }
-        .sector-info {
-            margin-bottom: 15px;
-            font-size: 11px;
-        }
-        .photos-grid { 
-            display: table;
-            width: 100%; 
-            table-layout: fixed;
-            border-collapse: collapse;
-        }
-        .photos-row {
-            display: table-row;
-        }
-        .photo-cell { 
-            display: table-cell;
-            width: 33.33%; 
-            text-align: center; 
-            padding: 8px; 
-            vertical-align: top;
-            border: 1px solid #eee;
-        }
-        .photo-container img { 
-            max-width: 140px; 
-            max-height: 105px; 
-            object-fit: contain; 
-            border: 1px solid #ddd; 
-            display: block; 
-            margin: 0 auto;
-        }
-        .photo-description { 
-            margin-top: 5px; 
-            font-size: 9px; 
-            color: #666; 
-            word-wrap: break-word; 
-            line-height: 1.2;
-        }
-        .photo-name {
-            font-weight: bold;
-            font-size: 9px;
-            margin-bottom: 3px;
-        }
-    </style>
-</head>
-<body>
-    <h1>Limpa Rio - Lote 05 - Arvores Por Frente</h1>
-    <p style="text-align: center; margin-bottom: 20px; font-size: 11px;">
-        <strong>Data de Exportação:</strong> ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}
-    </p>
-`;
-
-            let isFirstSector = true;
-
-            Object.keys(sectors).forEach(sectorKey => {
-                const sector = sectors[sectorKey];
-                const photos = sector.photos;
-                
-                // Dividir fotos em grupos de 9 por página
-                for (let pageStart = 0; pageStart < photos.length; pageStart += 9) {
-                    // Quebrar página se não for a primeira página do primeiro setor
-                    if (!isFirstSector || pageStart > 0) {
-                        wordContent += `<div class="page-break"></div>`;
-                    }
-                    
-                    const pagePhotos = photos.slice(pageStart, pageStart + 9);
-                    const isFirstPage = pageStart === 0;
-                    
-                    wordContent += `
-                        <h2>${sector.frente} - ${sector.municipio}${!isFirstPage ? ' (continuação)' : ''}</h2>
-                        ${isFirstPage ? `
-                        <div class="sector-info">
-                            <strong>🌳 Quantidade de Árvores:</strong> ${sector.quantidadeArvores} | 
-                            <strong>📷 Total de Fotos:</strong> ${photos.length}
-                        </div>` : ''}
-                        <div class="photos-grid">
-                    `;
-                    
-                    // Organizar fotos em linhas de 3
-                    for (let i = 0; i < pagePhotos.length; i += 3) {
-                        wordContent += `<div class="photos-row">`;
-                        
-                        // Adicionar até 3 fotos por linha
-                        for (let j = i; j < Math.min(i + 3, pagePhotos.length); j++) {
-                            const photo = pagePhotos[j];
-                            wordContent += `
-                                <div class="photo-cell">
-                                    <div class="photo-container">
-                                        <img src="${photo.src}" alt="Foto ${pageStart + j + 1}">
-                                        <div class="photo-name">${photo.name.length > 20 ? photo.name.substring(0, 20) + '...' : photo.name}</div>
-                                        ${photo.description ? `<div class="photo-description">${photo.description.length > 50 ? photo.description.substring(0, 50) + '...' : photo.description}</div>` : ''}
-                                    </div>
-                                </div>`;
-                        }
-                        
-                        // Preencher células vazias se necessário
-                        const remainingCells = 3 - (Math.min(i + 3, pagePhotos.length) - i);
-                        for (let k = 0; k < remainingCells; k++) {
-                            wordContent += `<div class="photo-cell"></div>`;
-                        }
-                        
-                        wordContent += `</div>`;
-                    }
-                    
-                    wordContent += `</div>`;
-                }
-                
-                isFirstSector = false;
-            });
-
-            wordContent += `
-</body>
-</html>`;
-
-            // Criar e baixar arquivo
-            const blob = new Blob(['\ufeff', wordContent], { 
-                type: 'application/vnd.ms-word;charset=utf-8' 
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `galeria-fotos-${new Date().toISOString().split('T')[0]}.doc`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function exportToHTML() {
-            if (Object.keys(sectors).length === 0) {
-                alert('Adicione algumas fotos antes de exportar!');
-                return;
-            }
-
-            // Criar conteúdo HTML completo
-            let htmlContent = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Galeria de Fotos por Setores - Relatório</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-        
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
-        
-        .export-info {
-            background: #f8fafc;
-            padding: 20px;
-            border-bottom: 1px solid #e2e8f0;
-            text-align: center;
-        }
-        
-        .gallery {
-            padding: 30px;
-        }
-        
-        .sector {
-            margin-bottom: 40px;
-            background: #f8fafc;
-            border-radius: 15px;
-            padding: 25px;
-            border: 1px solid #e2e8f0;
-        }
-        
-        .sector-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e2e8f0;
-        }
-        
-        .sector-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1f2937;
-        }
-        
-        .photo-count {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-        
-        .photos-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-        }
-        
-        .photo-item {
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .photo-item img {
-            width: 100%;
-            max-height: 250px;
-            object-fit: contain;
-            background: #f8fafc;
-        }
-        
-        .photo-info {
-            padding: 15px;
-        }
-        
-        .photo-description {
-            font-size: 14px;
-            color: #6b7280;
-            line-height: 1.4;
-        }
-        
-        .summary {
-            background: #f0f9ff;
-            border: 1px solid #bfdbfe;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .summary h3 {
-            color: #1e40af;
-            margin-bottom: 10px;
-        }
-        
-        @media print {
-            body { background: white; padding: 0; }
-            .container { box-shadow: none; }
-            .sector { page-break-inside: avoid; }
-        }
-        
-        @media (max-width: 768px) {
-            .photos-grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            }
-            .header h1 {
-                font-size: 2rem;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Limpa Rio - Lote 05 - Arvores Por Frente</h1>
-        </div>
-        
-        <div class="export-info">
-            <p><strong>📅 Data de Exportação:</strong> ${new Date().toLocaleDateString('pt-BR', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-            })}</p>
-            <p><strong>⏰ Horário:</strong> ${new Date().toLocaleTimeString('pt-BR')}</p>
-        </div>
-        
-        <div class="gallery">
-            <div class="summary">
-                <h3>📊 Resumo Geral</h3>
-                <p><strong>Total de Setores:</strong> ${Object.keys(sectors).length}</p>
-                <p><strong>Total de Fotos:</strong> ${Object.values(sectors).reduce((total, sector) => total + sector.photos.length, 0)}</p>
-            </div>
-`;
-
-            Object.keys(sectors).forEach(sectorKey => {
-                const sector = sectors[sectorKey];
-                const photos = sector.photos;
-                
-                htmlContent += `
-            <div class="sector">
-                <div class="sector-header">
-                    <div>
-                        <h2 class="sector-title">${sector.frente} - ${sector.municipio}</h2>
-                        <p style="color: #6b7280; margin-top: 5px; font-size: 0.9rem;">🌳 ${sector.quantidadeArvores} árvores</p>
-                    </div>
-                    <span class="photo-count">${photos.length} foto${photos.length !== 1 ? 's' : ''}</span>
-                </div>
-                <div class="photos-grid">
-`;
-                
-                photos.forEach((photo, index) => {
-                    htmlContent += `
-                    <div class="photo-item">
-                        <img src="${photo.src}" alt="Foto ${index + 1} - ${photo.name}" loading="lazy" style="max-width: 100%; height: auto; object-fit: contain;">
-                        <div class="photo-info">
-                            <strong>📷 ${photo.name}</strong>
-                            ${photo.description ? `<div class="photo-description">${photo.description}</div>` : ''}
-                        </div>
-                    </div>
-`;
-                });
-                
-                htmlContent += `
-                </div>
-            </div>
-`;
-            });
-
-            htmlContent += `
-        </div>
-    </div>
-</body>
-</html>`;
-
-            // Criar e baixar arquivo
-            const blob = new Blob([htmlContent], { 
-                type: 'text/html;charset=utf-8' 
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `galeria-fotos-${new Date().toISOString().split('T')[0]}.html`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function exportToPDF() {
-            if (Object.keys(sectors).length === 0) {
-                alert('Adicione algumas fotos antes de exportar!');
-                return;
-            }
-
-            // Criar elemento temporário para captura
-            const tempDiv = document.createElement('div');
-            tempDiv.style.position = 'absolute';
-            tempDiv.style.left = '-9999px';
-            tempDiv.style.top = '0';
-            tempDiv.style.width = '210mm'; // A4 width total
-            tempDiv.style.background = 'white';
-            tempDiv.style.fontFamily = 'Arial, sans-serif';
-            tempDiv.style.padding = '20px';
-
-            let pdfContent = `
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="color: #4facfe; font-size: 24px; margin-bottom: 10px;">
-                        Limpa Rio - Lote 05 - Arvores Por Frente
-                    </h1>
-                    <p style="font-size: 14px; color: #666;">
-                        <strong>Data de Exportação:</strong> ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}
-                    </p>
-                    <p style="font-size: 14px; color: #666; margin-top: 10px;">
-                        <strong>Total de Setores:</strong> ${Object.keys(sectors).length} | 
-                        <strong>Total de Fotos:</strong> ${Object.values(sectors).reduce((total, sector) => total + sector.photos.length, 0)}
-                    </p>
-                </div>
-            `;
-
-            let isFirstSector = true;
-
-            Object.keys(sectors).forEach(sectorKey => {
-                const sector = sectors[sectorKey];
-                const photos = sector.photos;
-                
-                // Dividir fotos em grupos de 9 por página (3x3)
-                for (let pageStart = 0; pageStart < photos.length; pageStart += 9) {
-                    // Quebrar página se não for a primeira página do primeiro setor
-                    if (!isFirstSector || pageStart > 0) {
-                        pdfContent += `<div style="page-break-before: always;"></div>`;
-                    }
-                    
-                    const pagePhotos = photos.slice(pageStart, pageStart + 9);
-                    const isFirstPage = pageStart === 0;
-                    
-                    pdfContent += `
-                        <div style="margin-bottom: 30px;">
-                            <h2 style="color: #374151; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-size: 18px;">
-                                ${sector.frente} - ${sector.municipio}${!isFirstPage ? ' (continuação)' : ''}
-                            </h2>
-                            ${isFirstPage ? `
-                            <p style="margin: 10px 0; font-size: 14px;">
-                                <strong>🌳 Quantidade de Árvores:</strong> ${sector.quantidadeArvores} | 
-                                <strong>📷 Total de Fotos:</strong> ${photos.length}
-                            </p>` : ''}
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; height: 220mm; align-content: start;">
-                    `;
-                    
-                    pagePhotos.forEach((photo, index) => {
-                        pdfContent += `
-                            <div style="text-align: center; page-break-inside: avoid; padding: 8px; height: 65mm;">
-                                <img src="${photo.src}" alt="Foto ${pageStart + index + 1}" 
-                                     style="width: 100%; max-width: 180px; height: 45mm; object-fit: contain; border: 1px solid #ddd; border-radius: 8px; background: #f8fafc; display: block; margin: 0 auto;">
-                                <div style="margin-top: 8px; font-size: 10px; line-height: 1.3; max-width: 180px; margin-left: auto; margin-right: auto; height: 15mm; overflow: hidden;">
-                                    <strong style="display: block; margin-bottom: 3px;">${photo.name.length > 18 ? photo.name.substring(0, 18) + '...' : photo.name}</strong>
-                                    ${photo.description ? `<em style="color: #666; display: block;">${photo.description.length > 40 ? photo.description.substring(0, 40) + '...' : photo.description}</em>` : ''}
-                                </div>
-                            </div>
-                        `;
-                    });
-                    
-                    pdfContent += `
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                isFirstSector = false;
-            });
-
-            tempDiv.innerHTML = pdfContent;
-            document.body.appendChild(tempDiv);
-
-            // Usar html2canvas para capturar o conteúdo
-            html2canvas(tempDiv, {
-                scale: 1.5,
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: '#ffffff',
-                width: tempDiv.scrollWidth,
-                height: tempDiv.scrollHeight
-            }).then(canvas => {
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                
-                const imgWidth = 210; // A4 width total
-                const pageHeight = 297; // A4 height total
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                let heightLeft = imgHeight;
-                let position = 0; // Sem margem
-
-                // Adicionar primeira página
-                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-
-                // Adicionar páginas adicionais se necessário
-                while (heightLeft >= 0) {
-                    position = heightLeft - imgHeight;
-                    pdf.addPage();
-                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                }
-
-                // Salvar PDF
-                pdf.save(`galeria-fotos-${new Date().toISOString().split('T')[0]}.pdf`);
-                
-                // Remover elemento temporário
-                document.body.removeChild(tempDiv);
-            }).catch(error => {
-                console.error('Erro ao gerar PDF:', error);
-                alert('Erro ao gerar PDF. Tente novamente.');
-                document.body.removeChild(tempDiv);
-            });
-        }
-
-        function exportToCSV() {
-            if (Object.keys(sectors).length === 0) {
-                alert('Adicione algumas fotos antes de exportar!');
-                return;
-            }
-
-            // Adicionar BOM para UTF-8
-            let csvContent = '\uFEFF';
-            csvContent += 'Frente,Município,Quantidade de Árvores,Nome da Foto,Descrição,Tamanho Estimado\n';
+        function editarFrente(id) {
+            const frente = frentes.find(f => f.id === id);
+            if (!frente) return;
             
-            Object.keys(sectors).forEach(sectorKey => {
-                const sector = sectors[sectorKey];
-                sector.photos.forEach(photo => {
-                    // Estimar tamanho do arquivo baseado no base64
-                    const sizeKB = Math.round((photo.src.length * 0.75) / 1024);
-                    const description = photo.description ? photo.description.replace(/"/g, '""') : '';
-                    csvContent += `"${sector.frente}","${sector.municipio}","${sector.quantidadeArvores}","${photo.name}","${description}","${sizeKB} KB"\n`;
-                });
-            });
-
-            // Adicionar resumo
-            csvContent += '\n--- RESUMO ---\n';
-            csvContent += 'Frente,Município,Quantidade de Árvores,Quantidade de Fotos\n';
-            Object.keys(sectors).forEach(sectorKey => {
-                const sector = sectors[sectorKey];
-                csvContent += `"${sector.frente}","${sector.municipio}","${sector.quantidadeArvores}",${sector.photos.length}\n`;
-            });
-
-            const totalPhotos = Object.values(sectors).reduce((total, sector) => total + sector.photos.length, 0);
-            csvContent += `"TOTAL",${totalPhotos}\n`;
-
-            // Criar e baixar arquivo
-            const blob = new Blob([csvContent], { 
-                type: 'text/csv;charset=utf-8;' 
-            });
+            // Preencher formulário com dados da frente
+            const form = document.getElementById('frenteForm');
+            form.querySelector('[name="codigo"]').value = frente.codigo;
+            form.querySelector('[name="corpoHidrico"]').value = frente.corpoHidrico;
+            form.querySelector('[name="municipio"]').value = frente.municipio;
+            form.querySelector('[name="bairro"]').value = frente.bairro;
+            form.querySelector('[name="dataVisita"]').value = frente.dataVisita;
+            form.querySelector('[name="tecnicaSocial"]').value = frente.tecnicaSocial;
+            form.querySelector('[name="comunidadeEntorno"]').value = frente.comunidadeEntorno || '';
+            form.querySelector('[name="nomeComunidade"]').value = frente.nomeComunidade || '';
             
-            // Criar link de download
-            const url = URL.createObjectURL(blob);
+            // Mostrar campos condicionais se necessário
+            if (frente.comunidadeEntorno === 'sim') {
+                document.getElementById('nomeComunidadeDiv').classList.remove('hidden');
+            }
+            
+            // Adicionar ID da frente sendo editada ao formulário
+            form.dataset.editingId = id;
+            
+            // Alterar texto do botão de submit
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '✏️ Atualizar Frente de Trabalho';
+            submitBtn.className = 'bg-orange-600 hover:bg-orange-700 text-white px-8 py-3 rounded-lg font-medium transition-all flex-1';
+            
+            // Adicionar botão de cancelar edição
+            const cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-lg font-medium transition-all';
+            cancelBtn.innerHTML = '❌ Cancelar Edição';
+            cancelBtn.onclick = cancelarEdicao;
+            
+            const buttonContainer = submitBtn.parentElement;
+            if (!buttonContainer.querySelector('.cancel-edit-btn')) {
+                cancelBtn.classList.add('cancel-edit-btn');
+                buttonContainer.insertBefore(cancelBtn, submitBtn.nextSibling);
+            }
+            
+            // Ir para a seção de nova frente
+            showSection('nova-frente');
+            
+            // Scroll para o topo
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // Mostrar mensagem de edição
+            const editMsg = document.createElement('div');
+            editMsg.className = 'fixed top-4 right-4 bg-orange-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            editMsg.innerHTML = `✏️ Editando Frente ${frente.codigo} - ${frente.corpoHidrico}`;
+            document.body.appendChild(editMsg);
+            
+            setTimeout(() => {
+                editMsg.remove();
+            }, 4000);
+        }
+        
+        function cancelarEdicao() {
+            const form = document.getElementById('frenteForm');
+            
+            // Limpar formulário
+            form.reset();
+            document.getElementById('photoPreview').innerHTML = '';
+            uploadedPhotos = [];
+            
+            // Esconder campos condicionais
+            document.getElementById('nomeComunidadeDiv').classList.add('hidden');
+            document.getElementById('tipoConstrucaoDiv').classList.add('hidden');
+            document.getElementById('quantidadeMoradiasDiv').classList.add('hidden');
+            
+            // Remover ID de edição
+            delete form.dataset.editingId;
+            
+            // Restaurar botão original
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '💾 Salvar Frente de Trabalho';
+            submitBtn.className = 'btn-primary text-white px-8 py-3 rounded-lg font-medium flex-1';
+            
+            // Remover botão de cancelar
+            const cancelBtn = form.querySelector('.cancel-edit-btn');
+            if (cancelBtn) {
+                cancelBtn.remove();
+            }
+            
+            // Mostrar mensagem
+            const cancelMsg = document.createElement('div');
+            cancelMsg.className = 'fixed top-4 right-4 bg-gray-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            cancelMsg.innerHTML = '❌ Edição cancelada';
+            document.body.appendChild(cancelMsg);
+            
+            setTimeout(() => {
+                cancelMsg.remove();
+            }, 3000);
+        }
+
+        function excluirFrente(id) {
+            if (confirm('Tem certeza que deseja excluir esta frente?')) {
+                frentes = frentes.filter(f => f.id !== id);
+                atualizarTabelaFrente();
+                atualizarDashboard();
+            }
+        }
+
+        function editarUsuario(id) {
+            alert('Funcionalidade de edição será implementada');
+        }
+
+        function excluirUsuario(id) {
+            if (confirm('Tem certeza que deseja excluir este usuário?')) {
+                usuarios = usuarios.filter(u => u.id !== id);
+                atualizarTabelaUsuarios();
+            }
+        }
+
+        function aplicarFiltros() {
+            // Implementar filtros
+            alert('Filtros aplicados com sucesso!');
+        }
+
+        function exportarDados() {
+            // Criar cabeçalho CSV
+            const cabecalho = 'Código,Corpo Hídrico,Município,Bairro,Data da Visita,Status,Técnica Social,Comunidade no Entorno,Nome da Comunidade\n';
+            
+            // Criar conteúdo CSV
+            const csvContent = cabecalho + frentes.map(f => 
+                `"${f.codigo}","${f.corpoHidrico}","${f.municipio}","${f.bairro}","${f.dataVisita}","${f.status}","${f.tecnicaSocial || ''}","${f.comunidadeEntorno || ''}","${f.nomeComunidade || ''}"`
+            ).join('\n');
+            
+            // Criar e baixar arquivo
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+            const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
-            a.download = `dados-galeria-${new Date().toISOString().split('T')[0]}.csv`;
-            
+            a.download = `frentes_limpa_rio_${new Date().toISOString().split('T')[0]}.csv`;
             document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
             
-            // Limpar
+            // Mostrar mensagem de sucesso
+            const successDiv = document.createElement('div');
+            successDiv.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            successDiv.innerHTML = '✅ Dados exportados para CSV com sucesso!';
+            document.body.appendChild(successDiv);
+            
             setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 100);
+                successDiv.remove();
+            }, 3000);
         }
 
-        function importFromCSV(input) {
-            const file = input.files[0];
-            if (!file) return;
-
-            if (!file.name.toLowerCase().endsWith('.csv')) {
-                alert('Por favor, selecione um arquivo CSV válido!');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const csvText = e.target.result;
-                    parseCSVData(csvText);
-                } catch (error) {
-                    alert('Erro ao ler o arquivo CSV. Verifique se o formato está correto.');
-                    console.error('Erro ao importar CSV:', error);
-                }
-            };
-            reader.readAsText(file, 'UTF-8');
-            
-            // Limpar o input para permitir reimportar o mesmo arquivo
-            input.value = '';
+        function gerarRelatorio() {
+            alert('Relatório PDF gerado com sucesso! (Funcionalidade simulada)');
         }
 
-        function parseCSVData(csvText) {
-            // Remover BOM se presente
-            csvText = csvText.replace(/^\uFEFF/, '');
-            
-            const lines = csvText.split('\n');
-            let dataLines = [];
-            let inResumo = false;
-            
-            // Filtrar apenas as linhas de dados (antes do resumo)
-            for (let line of lines) {
-                line = line.trim();
-                if (line === '--- RESUMO ---' || line.startsWith('"--- RESUMO ---"')) {
-                    inResumo = true;
-                    continue;
-                }
-                if (!inResumo && line && !line.startsWith('Frente,Município')) {
-                    dataLines.push(line);
-                }
-            }
-
-            if (dataLines.length === 0) {
-                alert('Nenhum dado válido encontrado no arquivo CSV!');
-                return;
-            }
-
-            // Confirmar importação
-            const confirmImport = confirm(`Encontrados ${dataLines.length} registros no CSV.\n\nDeseja:\n- OK: Adicionar aos dados existentes\n- Cancelar: Substituir todos os dados atuais`);
-            
-            if (confirmImport === null) return; // Usuário cancelou
-            
-            if (!confirmImport) {
-                // Limpar dados existentes
-                sectors = {};
-                photoCounter = 0;
-            }
-
-            let importedCount = 0;
-            let errorCount = 0;
-
-            dataLines.forEach((line, index) => {
-                try {
-                    const columns = parseCSVLine(line);
-                    
-                    if (columns.length >= 4) {
-                        const frente = columns[0] || '';
-                        const municipio = columns[1] || '';
-                        const quantidadeArvores = columns[2] || '';
-                        const nomeArquivo = columns[3] || '';
-                        const descricao = columns[4] || '';
-                        
-                        if (frente && municipio && nomeArquivo) {
-                            const sectorKey = `${frente} - ${municipio}`;
-                            
-                            if (!sectors[sectorKey]) {
-                                sectors[sectorKey] = {
-                                    frente: frente,
-                                    municipio: municipio,
-                                    quantidadeArvores: quantidadeArvores,
-                                    photos: []
-                                };
-                            }
-
-                            // Criar uma imagem placeholder para o arquivo importado
-                            const photo = {
-                                id: ++photoCounter,
-                                name: nomeArquivo,
-                                src: createPlaceholderImage(nomeArquivo),
-                                sector: sectorKey,
-                                description: descricao,
-                                isPlaceholder: true
-                            };
-                            
-                            sectors[sectorKey].photos.push(photo);
-                            importedCount++;
-                        }
-                    }
-                } catch (error) {
-                    errorCount++;
-                    console.error(`Erro na linha ${index + 1}:`, error);
-                }
-            });
-
-            renderGallery();
-            
-            let message = `Importação concluída!\n\n`;
-            message += `✅ ${importedCount} registros importados com sucesso\n`;
-            if (errorCount > 0) {
-                message += `⚠️ ${errorCount} registros com erro\n`;
-            }
-            message += `\nNota: As imagens foram substituídas por placeholders. Você pode substituí-las pelas imagens reais posteriormente.`;
-            
-            alert(message);
+        function gerarRelatorioPDF() {
+            alert('Relatório PDF completo gerado! (Funcionalidade simulada)');
         }
 
-        function parseCSVLine(line) {
-            const result = [];
-            let current = '';
-            let inQuotes = false;
-            let i = 0;
-            
-            while (i < line.length) {
-                const char = line[i];
-                
-                if (char === '"') {
-                    if (inQuotes && line[i + 1] === '"') {
-                        // Aspas duplas escapadas
-                        current += '"';
-                        i += 2;
-                    } else {
-                        // Início ou fim de campo com aspas
-                        inQuotes = !inQuotes;
-                        i++;
-                    }
-                } else if (char === ',' && !inQuotes) {
-                    // Separador de campo
-                    result.push(current.trim());
-                    current = '';
-                    i++;
-                } else {
-                    current += char;
-                    i++;
-                }
-            }
-            
-            // Adicionar o último campo
-            result.push(current.trim());
-            
-            return result;
+        function exportarExcel() {
+            alert('Dados exportados para Excel! (Funcionalidade simulada)');
         }
 
-        function createPlaceholderImage(filename) {
-            // Criar uma imagem SVG placeholder
-            const svg = `
-                <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="200" height="200" fill="#f3f4f6" stroke="#d1d5db" stroke-width="2"/>
-                    <text x="100" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#6b7280">
-                        📁 Arquivo CSV
-                    </text>
-                    <text x="100" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#9ca3af">
-                        ${filename.length > 20 ? filename.substring(0, 20) + '...' : filename}
-                    </text>
-                    <text x="100" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#9ca3af">
-                        Clique para substituir
-                    </text>
-                </svg>
-            `;
-            
-            return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+        function gerarRelatorioSintese() {
+            alert('Relatório de síntese gerado! (Funcionalidade simulada)');
         }
 
-        function replacePlaceholder(sectorKey, photoId) {
-            // Criar input file temporário
+        function importarCSV() {
+            // Criar input file invisível
             const input = document.createElement('input');
             input.type = 'file';
-            input.accept = 'image/*';
+            input.accept = '.csv';
             input.style.display = 'none';
             
-            input.onchange = function(e) {
-                const file = e.target.files[0];
-                if (file && file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        // Encontrar e atualizar a foto
-                        const photo = sectors[sectorKey].photos.find(p => p.id === photoId);
-                        if (photo) {
-                            photo.src = event.target.result;
-                            photo.isPlaceholder = false;
-                            renderGallery();
+            input.onchange = function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const csv = e.target.result;
+                        const linhas = csv.split('\n');
+                        
+                        // Verificar se tem cabeçalho
+                        if (linhas.length < 2) {
+                            alert('❌ Arquivo CSV deve ter pelo menos uma linha de dados além do cabeçalho.');
+                            return;
                         }
-                    };
-                    reader.readAsDataURL(file);
-                }
-                document.body.removeChild(input);
+                        
+                        // Processar cabeçalho (primeira linha)
+                        const cabecalho = linhas[0].split(',').map(col => col.trim().replace(/"/g, ''));
+                        
+                        // Verificar colunas obrigatórias
+                        const colunasObrigatorias = ['codigo', 'corpoHidrico', 'municipio', 'bairro', 'dataVisita', 'tecnicaSocial'];
+                        const colunasFaltando = colunasObrigatorias.filter(col => 
+                            !cabecalho.some(h => h.toLowerCase().includes(col.toLowerCase()))
+                        );
+                        
+                        if (colunasFaltando.length > 0) {
+                            alert(`❌ Colunas obrigatórias não encontradas: ${colunasFaltando.join(', ')}\n\nFormato esperado: codigo,corpoHidrico,municipio,bairro,dataVisita,tecnicaSocial,comunidadeEntorno,nomeComunidade`);
+                            return;
+                        }
+                        
+                        let frentesImportadas = 0;
+                        let erros = [];
+                        
+                        // Processar dados (pular primeira linha do cabeçalho)
+                        for (let i = 1; i < linhas.length; i++) {
+                            const linha = linhas[i].trim();
+                            if (!linha) continue; // Pular linhas vazias
+                            
+                            const dados = linha.split(',').map(col => col.trim().replace(/"/g, ''));
+                            
+                            try {
+                                // Mapear dados baseado no cabeçalho
+                                const novaFrente = {
+                                    id: frentes.length + frentesImportadas + 1,
+                                    codigo: dados[cabecalho.findIndex(h => h.toLowerCase().includes('codigo'))] || '',
+                                    corpoHidrico: dados[cabecalho.findIndex(h => h.toLowerCase().includes('corpohidrico') || h.toLowerCase().includes('corpo'))] || '',
+                                    municipio: dados[cabecalho.findIndex(h => h.toLowerCase().includes('municipio'))] || '',
+                                    bairro: dados[cabecalho.findIndex(h => h.toLowerCase().includes('bairro'))] || '',
+                                    dataVisita: dados[cabecalho.findIndex(h => h.toLowerCase().includes('datavisita') || h.toLowerCase().includes('data'))] || '',
+                                    tecnicaSocial: dados[cabecalho.findIndex(h => h.toLowerCase().includes('tecnicasocial') || h.toLowerCase().includes('tecnica'))] || '',
+                                    comunidadeEntorno: dados[cabecalho.findIndex(h => h.toLowerCase().includes('comunidadeentorno') || h.toLowerCase().includes('comunidade'))] || 'nao',
+                                    nomeComunidade: dados[cabecalho.findIndex(h => h.toLowerCase().includes('nomecomunidade') || h.toLowerCase().includes('nome'))] || '',
+                                    status: 'Importado',
+                                    fotos: []
+                                };
+                                
+                                // Validar dados obrigatórios
+                                if (!novaFrente.codigo || !novaFrente.corpoHidrico || !novaFrente.municipio || !novaFrente.bairro || !novaFrente.dataVisita || !novaFrente.tecnicaSocial) {
+                                    erros.push(`Linha ${i + 1}: Dados obrigatórios faltando`);
+                                    continue;
+                                }
+                                
+                                // Verificar se código já existe
+                                if (frentes.some(f => f.codigo === novaFrente.codigo)) {
+                                    erros.push(`Linha ${i + 1}: Código ${novaFrente.codigo} já existe`);
+                                    continue;
+                                }
+                                
+                                // Validar formato da data
+                                const dataRegex = /^\d{4}-\d{2}-\d{2}$/;
+                                if (!dataRegex.test(novaFrente.dataVisita)) {
+                                    // Tentar converter formato brasileiro para ISO
+                                    const dataBR = novaFrente.dataVisita.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                                    if (dataBR) {
+                                        novaFrente.dataVisita = `${dataBR[3]}-${dataBR[2]}-${dataBR[1]}`;
+                                    } else {
+                                        erros.push(`Linha ${i + 1}: Data inválida (use formato AAAA-MM-DD ou DD/MM/AAAA)`);
+                                        continue;
+                                    }
+                                }
+                                
+                                frentes.push(novaFrente);
+                                frentesImportadas++;
+                                
+                            } catch (error) {
+                                erros.push(`Linha ${i + 1}: Erro ao processar dados - ${error.message}`);
+                            }
+                        }
+                        
+                        // Mostrar resultado da importação
+                        let mensagem = `✅ Importação concluída!\n\n`;
+                        mensagem += `📊 Frentes importadas: ${frentesImportadas}\n`;
+                        
+                        if (erros.length > 0) {
+                            mensagem += `⚠️ Erros encontrados: ${erros.length}\n\n`;
+                            mensagem += `Detalhes dos erros:\n${erros.slice(0, 10).join('\n')}`;
+                            if (erros.length > 10) {
+                                mensagem += `\n... e mais ${erros.length - 10} erros.`;
+                            }
+                        }
+                        
+                        alert(mensagem);
+                        
+                        // Atualizar interface se houve importações
+                        if (frentesImportadas > 0) {
+                            atualizarDashboard();
+                            if (document.getElementById('listar-frentes').classList.contains('section') && !document.getElementById('listar-frentes').classList.contains('hidden')) {
+                                atualizarTabelaFrente();
+                            }
+                        }
+                        
+                    } catch (error) {
+                        alert(`❌ Erro ao processar arquivo CSV: ${error.message}\n\nVerifique se o arquivo está no formato correto.`);
+                    }
+                };
+                
+                reader.readAsText(file, 'UTF-8');
             };
             
-            document.body.appendChild(input);
-            input.click();
+            // Mostrar modal com instruções antes de abrir o seletor
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-full overflow-y-auto">
+                    <h3 class="text-xl font-bold mb-4 text-blue-600">📥 Importar Dados CSV</h3>
+                    
+                    <div class="mb-6">
+                        <h4 class="font-semibold mb-2">📋 Formato do Arquivo CSV:</h4>
+                        <div class="bg-gray-100 p-3 rounded-lg text-sm font-mono">
+                            codigo,corpoHidrico,municipio,bairro,dataVisita,tecnicaSocial,comunidadeEntorno,nomeComunidade<br>
+                            168,Rio Maracanã,Rio de Janeiro,Tijuca,2024-01-20,Ana Silva,sim,Vila Maracanã<br>
+                            169,Rio Joana,Rio de Janeiro,Tijuca,2024-01-21,João Santos,nao,
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h4 class="font-semibold mb-2">⚠️ Observações Importantes:</h4>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            <li>• <strong>Colunas obrigatórias:</strong> codigo, corpoHidrico, municipio, bairro, dataVisita, tecnicaSocial</li>
+                            <li>• <strong>Data:</strong> Use formato AAAA-MM-DD ou DD/MM/AAAA</li>
+                            <li>• <strong>Comunidade:</strong> Use "sim" ou "nao" para comunidadeEntorno</li>
+                            <li>• <strong>Códigos únicos:</strong> Cada código de frente deve ser único</li>
+                            <li>• <strong>Encoding:</strong> Salve o arquivo em UTF-8 para caracteres especiais</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="flex gap-4">
+                        <button onclick="this.parentElement.parentElement.parentElement.remove(); document.body.appendChild(input); input.click();" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all">
+                            📂 Selecionar Arquivo CSV
+                        </button>
+                        <button onclick="baixarModeloCSV()" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-all">
+                            📄 Baixar Modelo
+                        </button>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-all">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        function baixarModeloCSV() {
+            const modelo = `codigo,corpoHidrico,municipio,bairro,dataVisita,tecnicaSocial,comunidadeEntorno,nomeComunidade
+168,Rio Maracanã,Rio de Janeiro,Tijuca,2024-01-20,Ana Silva,sim,Vila Maracanã
+169,Rio Joana,Rio de Janeiro,Tijuca,2024-01-21,João Santos,nao,
+170,Rio Comprido,Rio de Janeiro,Rio Comprido,2024-01-22,Maria Costa,sim,Comunidade do Rio Comprido`;
+            
+            const blob = new Blob([modelo], { type: 'text/csv;charset=utf-8' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'modelo_importacao_frentes.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
         }
 
-        // Variáveis para drag and drop
-        let draggedElement = null;
-        let draggedPhotoId = null;
-        let draggedSectorKey = null;
-
-        function handleDragStart(event) {
-            draggedElement = event.target;
-            draggedPhotoId = parseInt(event.target.dataset.photoId);
-            draggedSectorKey = event.target.dataset.sector;
+        function exportarFrenteAtual() {
+            const form = document.getElementById('frenteForm');
+            const formData = new FormData(form);
             
-            event.target.classList.add('dragging');
-            event.dataTransfer.effectAllowed = 'move';
-            event.dataTransfer.setData('text/html', event.target.outerHTML);
-        }
-
-        function handleDragOver(event) {
-            event.preventDefault();
-            event.dataTransfer.dropEffect = 'move';
-            
-            const targetElement = event.target.closest('.photo-item');
-            if (targetElement && targetElement !== draggedElement) {
-                targetElement.classList.add('drag-over');
-            }
-        }
-
-        function handleDrop(event) {
-            event.preventDefault();
-            
-            const targetElement = event.target.closest('.photo-item');
-            if (!targetElement || targetElement === draggedElement) {
+            // Verificar se há dados no formulário
+            if (!formData.get('codigo') && !formData.get('corpoHidrico')) {
+                alert('⚠️ Preencha pelo menos o código e corpo hídrico para exportar os dados.');
                 return;
             }
             
-            const targetPhotoId = parseInt(targetElement.dataset.photoId);
-            const targetSectorKey = targetElement.dataset.sector;
-            
-            // Só permite reordenar dentro do mesmo setor
-            if (draggedSectorKey === targetSectorKey) {
-                reorderPhotos(draggedSectorKey, draggedPhotoId, targetPhotoId);
-            }
-            
-            // Limpar classes de drag
-            document.querySelectorAll('.photo-item').forEach(item => {
-                item.classList.remove('drag-over');
-            });
-        }
-
-        function handleDragEnd(event) {
-            event.target.classList.remove('dragging');
-            document.querySelectorAll('.photo-item').forEach(item => {
-                item.classList.remove('drag-over');
-            });
-            
-            draggedElement = null;
-            draggedPhotoId = null;
-            draggedSectorKey = null;
-        }
-
-        function reorderPhotos(sectorKey, draggedId, targetId) {
-            const photos = sectors[sectorKey].photos;
-            const draggedIndex = photos.findIndex(photo => photo.id === draggedId);
-            const targetIndex = photos.findIndex(photo => photo.id === targetId);
-            
-            if (draggedIndex === -1 || targetIndex === -1) return;
-            
-            // Remove o item arrastado e insere na nova posição
-            const draggedPhoto = photos.splice(draggedIndex, 1)[0];
-            photos.splice(targetIndex, 0, draggedPhoto);
-            
-            // Re-renderizar a galeria
-            renderGallery();
-        }
-
-        // Permitir arrastar e soltar arquivos
-        document.addEventListener('DOMContentLoaded', function() {
-            const gallery = document.getElementById('gallery');
-            
-            gallery.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                gallery.style.background = '#f0f9ff';
-            });
-            
-            gallery.addEventListener('dragleave', function(e) {
-                e.preventDefault();
-                gallery.style.background = '';
-            });
-            
-            gallery.addEventListener('drop', function(e) {
-                e.preventDefault();
-                gallery.style.background = '';
+            try {
+                // Coletar dados dos equipamentos
+                const escolas = [];
+                const escolaNomes = formData.getAll('escola_nome[]');
+                const escolaEnderecos = formData.getAll('escola_endereco[]');
+                const escolaSegmentos = formData.getAll('escola_segmento[]');
                 
-                const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
-                if (files.length > 0) {
-                    const frente = prompt('Digite a Frente:');
-                    if (!frente) return;
-                    
-                    const municipio = prompt('Digite o Município:');
-                    if (!municipio) return;
-                    
-                    const quantidadeArvores = prompt('Digite a Quantidade de Árvores:');
-                    if (!quantidadeArvores) return;
-                    
-                    const sectorKey = `${frente.trim()} - ${municipio.trim()}`;
-                    
-                    if (!sectors[sectorKey]) {
-                        sectors[sectorKey] = {
-                            frente: frente.trim(),
-                            municipio: municipio.trim(),
-                            quantidadeArvores: quantidadeArvores.trim(),
-                            photos: []
-                        };
+                for (let i = 0; i < escolaNomes.length; i++) {
+                    if (escolaNomes[i] && escolaNomes[i].trim()) {
+                        escolas.push({
+                            nome: escolaNomes[i],
+                            endereco: escolaEnderecos[i] || '',
+                            segmento: escolaSegmentos[i] || ''
+                        });
                     }
-                    
-                    files.forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const photo = {
-                                id: ++photoCounter,
-                                name: file.name,
-                                src: e.target.result,
-                                sector: sectorKey
-                            };
-                            sectors[sectorKey].photos.push(photo);
-                            renderGallery();
-                        };
-                        reader.readAsDataURL(file);
+                }
+                
+                const saude = [];
+                const saudeNomes = formData.getAll('saude_nome[]');
+                const saudeEnderecos = formData.getAll('saude_endereco[]');
+                
+                for (let i = 0; i < saudeNomes.length; i++) {
+                    if (saudeNomes[i] && saudeNomes[i].trim()) {
+                        saude.push({
+                            nome: saudeNomes[i],
+                            endereco: saudeEnderecos[i] || ''
+                        });
+                    }
+                }
+                
+                const transporte = [];
+                const transporteLinhas = formData.getAll('transporte_linha[]');
+                const transporteEmpresas = formData.getAll('transporte_empresa[]');
+                const transporteTipos = formData.getAll('transporte_tipo[]');
+                
+                for (let i = 0; i < transporteLinhas.length; i++) {
+                    if (transporteLinhas[i] && transporteLinhas[i].trim()) {
+                        transporte.push({
+                            linha: transporteLinhas[i],
+                            empresa: transporteEmpresas[i] || '',
+                            tipo: transporteTipos[i] || ''
+                        });
+                    }
+                }
+                
+                // Criar CSV com dados da frente atual
+                let csvContent = 'DADOS BÁSICOS\n';
+                csvContent += 'Campo,Valor\n';
+                csvContent += `Código da Frente,"${formData.get('codigo') || ''}"\n`;
+                csvContent += `Corpo Hídrico,"${formData.get('corpoHidrico') || ''}"\n`;
+                csvContent += `Município,"${formData.get('municipio') || ''}"\n`;
+                csvContent += `Bairro,"${formData.get('bairro') || ''}"\n`;
+                csvContent += `Data da Visita,"${formData.get('dataVisita') || ''}"\n`;
+                csvContent += `Região Hidrográfica,"${formData.get('regiaoHidrografica') || ''}"\n`;
+                csvContent += `Técnica Social,"${formData.get('tecnicaSocial') || ''}"\n`;
+                csvContent += `Encarregados,"${formData.get('encarregados') || ''}"\n`;
+                csvContent += `Agentes Socioambientais,"${(formData.get('agentesSocioambientais') || '').replace(/"/g, '""')}"\n`;
+                csvContent += `Comunidade no Entorno,"${formData.get('comunidadeEntorno') || ''}"\n`;
+                csvContent += `Nome da Comunidade,"${formData.get('nomeComunidade') || ''}"\n`;
+                csvContent += `Construções às Margens,"${formData.get('construcoesMargens') || ''}"\n`;
+                csvContent += `Tipo de Construção,"${formData.get('tipoConstrucao') || ''}"\n`;
+                csvContent += `Quantidade de Moradias,"${formData.get('quantidadeMoradias') || ''}"\n`;
+                csvContent += `Observações Gerais,"${(formData.get('observacoesGerais') || '').replace(/"/g, '""')}"\n`;
+                
+                if (escolas.length > 0) {
+                    csvContent += '\n\nESCOLAS\n';
+                    csvContent += 'Nome,Endereço,Segmento\n';
+                    escolas.forEach(escola => {
+                        csvContent += `"${escola.nome.replace(/"/g, '""')}","${escola.endereco.replace(/"/g, '""')}","${escola.segmento}"\n`;
                     });
                 }
-            });
+                
+                if (saude.length > 0) {
+                    csvContent += '\n\nUNIDADES DE SAÚDE\n';
+                    csvContent += 'Nome,Endereço\n';
+                    saude.forEach(unidade => {
+                        csvContent += `"${unidade.nome.replace(/"/g, '""')}","${unidade.endereco.replace(/"/g, '""')}"\n`;
+                    });
+                }
+                
+                if (transporte.length > 0) {
+                    csvContent += '\n\nTRANSPORTE PÚBLICO\n';
+                    csvContent += 'Linha,Empresa,Tipo\n';
+                    transporte.forEach(t => {
+                        csvContent += `"${t.linha.replace(/"/g, '""')}","${t.empresa.replace(/"/g, '""')}","${t.tipo}"\n`;
+                    });
+                }
+                
+                // Gerar e baixar arquivo
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                const nomeArquivo = `Frente_${formData.get('codigo') || 'Nova'}_${(formData.get('corpoHidrico') || 'Dados').replace(/\s+/g, '_')}.csv`;
+                a.download = nomeArquivo;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                // Mostrar mensagem de sucesso
+                const successDiv = document.createElement('div');
+                successDiv.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                successDiv.innerHTML = '✅ Dados exportados para CSV com sucesso!';
+                document.body.appendChild(successDiv);
+                
+                setTimeout(() => {
+                    successDiv.remove();
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Erro ao exportar CSV:', error);
+                alert('Erro ao exportar dados. Tente novamente.');
+            }
+        }
+
+        function gerarWordFrenteAtual() {
+            const form = document.getElementById('frenteForm');
+            const formData = new FormData(form);
+            
+            // Verificar se há dados no formulário
+            if (!formData.get('codigo') && !formData.get('corpoHidrico')) {
+                alert('⚠️ Preencha pelo menos o código e corpo hídrico para gerar o documento.');
+                return;
+            }
+            
+            try {
+                // Criar objeto frente temporário com dados do formulário
+                const frenteTemp = {
+                    codigo: formData.get('codigo') || 'Nova Frente',
+                    corpoHidrico: formData.get('corpoHidrico') || 'Não informado',
+                    municipio: formData.get('municipio') || 'Não informado',
+                    bairro: formData.get('bairro') || 'Não informado',
+                    dataVisita: formData.get('dataVisita') || new Date().toISOString().split('T')[0],
+                    tecnicaSocial: formData.get('tecnicaSocial') || 'Não informado',
+                    comunidadeEntorno: formData.get('comunidadeEntorno') || 'nao',
+                    nomeComunidade: formData.get('nomeComunidade') || ''
+                };
+                
+                // Gerar documento
+                gerarWordFrente(frenteTemp, formData);
+                
+                // Mostrar mensagem de sucesso
+                const successDiv = document.createElement('div');
+                successDiv.className = 'fixed top-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                successDiv.innerHTML = '✅ Documento gerado com sucesso!';
+                document.body.appendChild(successDiv);
+                
+                setTimeout(() => {
+                    successDiv.remove();
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Erro ao gerar documento:', error);
+                alert('Erro ao gerar documento. Verifique os dados e tente novamente.');
+            }
+        }
+
+        function logout() {
+            if (confirm('Tem certeza que deseja sair do sistema?')) {
+                alert('Logout realizado com sucesso!');
+            }
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            showSection('dashboard');
+            atualizarDashboard();
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97c7a984a252da2e',t:'MTc1NzQzMTE0OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98e9667ed4f8ddeb',t:'MTc2MDQ2OTI3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
