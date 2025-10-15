@@ -1436,7 +1436,7 @@ document.getElementById("frenteForm").addEventListener("submit", async (e) => {
     const resposta = await fetch("https://script.google.com/macros/s/AKfycby75TEqh4VuFB6tPZQlzvcxVzHm1YWy3wTzh73kd4rRNZlgo77QtlpID-otRuax0uL9AA/exec", { // URL do seu Apps Script
       method: "POST",
       mode: "cors",
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin":"*"},
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin":"https://eeloib.github.io/LandingVetorExperience/"},
       body: JSON.stringify(dados),
     });
 
