@@ -1435,9 +1435,8 @@ document.getElementById("frenteForm").addEventListener("submit", async (e) => {
   try {
     const resposta = await fetch("https://script.google.com/macros/s/AKfycby7paS0gTxjyTrbYuyQco1DfhZKlY1FCGXAESc4XTFFb3UCeB9Q-hJrR4AAYaiEer_taQ/exec", { // URL do seu Apps Script
       method: "POST",
-      mode: "cors",
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin":"https://eeloib.github.io/LandingVetorExperience/"},
-      body: JSON.stringify(dados),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dados)
     });
 
     const resultado = await resposta.json();
